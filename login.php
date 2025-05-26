@@ -26,6 +26,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['username'] = $user['username'];
             $_SESSION['role'] = $user['role'];
 
+            if ($user['role'] === 'admin') {
+                $_SESSION['admin_logged_in'] = true;
+            }
+
             $response['success'] = true;
             $response['message'] = 'Login successful!';
             $response['role'] = $user['role']; // Send role back to JS
