@@ -2,7 +2,24 @@
 header('Content-Type: application/json');
 require_once 'db_connect.php'; // Include your database connection
 
-$to = "courtney.forgues@gmail.com";
+$env = getenv('DEPLOY_ENV');
+
+// Fallback logic if not explicitly set
+if (!$env) {
+    $hostname = $_SERVER['HTTP_HOST'] ?? 'localhost';
+    if (str_contains($hostname, 'dev.') || str_contains($hostname, 'localhost')) {
+        $env = 'dev';
+    } else {
+        $env = 'prod';
+    }
+}
+
+if ($env === 'dev') {
+    $to = 'quentin.forgues@gmail.com'; // 👈 Replace with your dev/test email
+} else {
+    $to = 'courtney.forgues@gmail.com';
+}
+
 $fromEmail = "orders@courtneyscookies.com";
 $fromName = "Courtney's Caribbean Cookies";
 
