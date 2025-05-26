@@ -26,7 +26,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_SESSION['username'] = $user['username'];
             $_SESSION['role'] = $user['role'];
 
-            if ($user['role'] === 'admin') {
+            $normalizedRole = strtolower($user['role']);
+            if (in_array($normalizedRole, ['admin', 'key master'])) {
                 $_SESSION['admin_logged_in'] = true;
             }
 
