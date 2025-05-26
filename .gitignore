@@ -1,41 +1,26 @@
-# System files
+# macOS system file
 .DS_Store
 
 # Bluehost system files
 .cpanel.yml
 
-# SSL, log, and junk files
+# Let's Encrypt/SSL verification folder
 .well-known/
+
+# Deployment logs and temp/debug files
 cron-deploy.log
 *.log
 *.tmp
 *.bak
 
-# Deployment targets (do NOT track)
+# Deployment folders (not in repo)
 cookies/
 cookies_dev/
 
 # Deployment scripts
 deploy.sh
 deploy-dev.sh
-# System-specific files
-.DS_Store
+cron-deploy.sh
 
-# Bluehost and CPanel system files
-.cpanel.yml
-
-# SSL and verification folders
-.well-known/
-
-# Deployment logs
-cron-deploy.log
-
-# If these are ONLY for deployment and not tracked by GitHub
-# Uncomment the lines below if you're not pushing these folders to GitHub
-# cookies/
-# cookies_dev/
-
-# If any temporary commits or debug SHA files
-*.log
-*.tmp
-*.bak
+# Sensitive DB configs (both explicit and wildcard)
+#config/db_connect_*.php
