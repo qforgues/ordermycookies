@@ -3,7 +3,7 @@ session_start();
 require_once 'db_connect.php';
 
 // Ensure admin is logged in
-if (in_array($normalizedRole, ['admin', 'key master'])) {
+if (in_array($normalizedRole, ['admin', 'keymaster'])) {
     $_SESSION['admin_logged_in'] = true;
 }
 

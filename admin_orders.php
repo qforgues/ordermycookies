@@ -1,7 +1,7 @@
 <?php
 session_start();
 $role = strtolower($_SESSION['role'] ?? '');
-if (!in_array($role, ['admin', 'key master'])) {
+if (!in_array($role, ['admin', 'keymaster'])) {
     header('Location: admin.html?auth=failed');
     exit;
 }
