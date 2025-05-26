@@ -1,3 +1,23 @@
+# System files
+.DS_Store
+
+# Bluehost system files
+.cpanel.yml
+
+# SSL, log, and junk files
+.well-known/
+cron-deploy.log
+*.log
+*.tmp
+*.bak
+
+# Deployment targets (do NOT track)
+cookies/
+cookies_dev/
+
+# Deployment scripts
+deploy.sh
+deploy-dev.sh
 # System-specific files
 .DS_Store
 
