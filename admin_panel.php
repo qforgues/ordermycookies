@@ -2,10 +2,9 @@
 session_start();
 require_once 'db_connect.php';
 
-// Check if user is logged in and has keymaster (0) or owner (1) role
-if (!isset($_SESSION['user_id']) || ($_SESSION['role'] !== 0 && $_SESSION['role'] !== 1)) {
-    header('Location: admin.html?auth=failed'); // Redirect to login page if not authorized
-    exit;
+// Ensure admin is logged in
+if (in_array($normalizedRole, ['admin', 'key master'])) {
+    $_SESSION['admin_logged_in'] = true;
 }
 
 // Fetch current settings
