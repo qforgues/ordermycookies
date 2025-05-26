@@ -47,6 +47,7 @@ $chocochipQuantity = (int)($_POST['chocochipQuantity'] ?? 0);
 $oreomgQuantity = (int)($_POST['oreomgQuantity'] ?? 0);
 $snickerdoodleQuantity = (int)($_POST['snickerdoodleQuantity'] ?? 0);
 $peanutbutterQuantity = (int)($_POST['peanutbutterQuantity'] ?? 0);
+$maplebaconQuantity = (int)($_POST['maplebaconQuantity'] ?? 0);
 $totalAmount = htmlspecialchars($_POST['totalAmount'] ?? '$0.00'); // Keep as string "$XX.XX" for email
 
 $selectedPaymentMethod = htmlspecialchars($_POST['selectedPaymentMethod']);
@@ -66,6 +67,7 @@ try {
         peanut_butter_quantity,
         oreomg_quantity,
         snickerdoodle_quantity,
+        maplebacon_quantity,
         total_amount,
         delivery_method,
         pickup_time,
@@ -85,6 +87,7 @@ try {
         $peanutbutterQuantity,
         $oreomgQuantity,
         $snickerdoodleQuantity,
+        $maplebaconQuantity,
         $totalAmount,
         $deliveryMethod,
         $pickupTime,
@@ -120,6 +123,7 @@ if ($chocochipQuantity > 0) $message .= "Chocolate Chip: $chocochipQuantity\n";
 if ($oreomgQuantity > 0) $message .= "Ore-OMG: $oreomgQuantity\n";
 if ($snickerdoodleQuantity > 0) $message .= "Snickerdoodle: $snickerdoodleQuantity\n";
 if ($peanutbutterQuantity > 0) $message .= "Peanut Butter: $peanutbutterQuantity\n";
+if ($maplebaconQuantity > 0) $message .= "Maple Bacon: $maplebaconQuantity\n";
 $message .= "\nTotal: $totalAmount\n";
 
 $mailSuccess = mail($to, $subject, $message, $headers);

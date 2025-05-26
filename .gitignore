@@ -23,4 +23,4 @@ deploy-dev.sh
 cron-deploy.sh
 
 # Sensitive DB configs (both explicit and wildcard)
-#config/db_connect_*.php
+# config/db_connect_*.php
