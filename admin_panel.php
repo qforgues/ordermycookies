@@ -111,6 +111,7 @@ try {
 <body>
     <div class="admin-container">
         <h1>Admin Panel</h1>
+        <h2><a href="admin_orders.php">Admin Orders</a></h2>
         <button class="logout-btn" onclick="logout()">Logout</button>
         <p>Welcome, <?php echo htmlspecialchars($_SESSION['username']); ?> (Role: <?php
             if ($_SESSION['role'] === 0) echo 'Keymaster';
