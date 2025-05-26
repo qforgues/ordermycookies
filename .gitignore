@@ -1,12 +1,21 @@
-HEAD
-.well-known/
-cron-deploy.log
-public_html/
-cron-deploy.log
-e0091a848ad9db1f0995514edb8afe4597571a32
+# System-specific files
+.DS_Store
 
-.DS_Store
-.DS_Store
-.DS_Store
-cookies_dev/
-cookies/
+# Bluehost and CPanel system files
+.cpanel.yml
+
+# SSL and verification folders
+.well-known/
+
+# Deployment logs
+cron-deploy.log
+
+# If these are ONLY for deployment and not tracked by GitHub
+# Uncomment the lines below if you're not pushing these folders to GitHub
+# cookies/
+# cookies_dev/
+
+# If any temporary commits or debug SHA files
+*.log
+*.tmp
+*.bak

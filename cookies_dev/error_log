@@ -1,0 +1,24 @@
+[20-May-2025 14:54:36 America/Boise] Database Error: SQLSTATE[HY000] [1045] Access denied for user 'YOUR_DB_USER'@'localhost' (using password: YES)
+[20-May-2025 14:54:42 America/Boise] Database Error: SQLSTATE[HY000] [1045] Access denied for user 'YOUR_DB_USER'@'localhost' (using password: YES)
+[20-May-2025 15:02:55 America/Boise] Database Error: SQLSTATE[HY000] [1045] Access denied for user 'YOUR_DB_USER'@'localhost' (using password: YES)
+[20-May-2025 15:06:44 America/Boise] Database Error: SQLSTATE[HY000] [1045] Access denied for user 'cookieMonster'@'localhost' (using password: YES)
+[20-May-2025 15:10:46 America/Boise] Database Error in process_order.php: SQLSTATE[HY000] [1045] Access denied for user 'YOUR_DB_USER'@'localhost' (using password: YES)
+[20-May-2025 15:13:13 America/Boise] Database Error in process_order.php: SQLSTATE[HY000] [1045] Access denied for user 'cookieMonster'@'localhost' (using password: YES)
+[20-May-2025 15:15:06 America/Boise] Database Error in process_order.php: SQLSTATE[42S02]: Base table or view not found: 1146 Table 'cmvtuimy_cookies.cookies_orders' doesn't exist
+[20-May-2025 15:16:47 America/Boise] Database Error in process_order.php: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'delivery_method' in 'field list'
+[20-May-2025 15:28:29 America/Boise] Database Error in process_order.php: SQLSTATE[42S22]: Column not found: 1054 Unknown column 'delivery_method' in 'field list'
+[21-May-2025 11:50:53 America/Boise] PHP Warning:  Undefined variable $_ in /home4/cmvtuimy/public_html/website_5b303f54/process_order.php on line 26
+[21-May-2025 11:50:53 America/Boise] PHP Fatal error:  Uncaught Error: Value of type null is not callable in /home4/cmvtuimy/public_html/website_5b303f54/process_order.php:26
+Stack trace:
+#0 {main}
+  thrown in /home4/cmvtuimy/public_html/website_5b303f54/process_order.php on line 26
+[21-May-2025 11:54:38 America/Boise] PHP Warning:  Undefined variable $_ in /home4/cmvtuimy/public_html/website_5b303f54/process_order.php on line 26
+[21-May-2025 11:54:38 America/Boise] PHP Fatal error:  Uncaught Error: Value of type null is not callable in /home4/cmvtuimy/public_html/website_5b303f54/process_order.php:26
+Stack trace:
+#0 {main}
+  thrown in /home4/cmvtuimy/public_html/website_5b303f54/process_order.php on line 26
+[21-May-2025 12:01:08 America/Boise] PHP Warning:  Undefined variable $_ in /home4/cmvtuimy/public_html/website_5b303f54/process_order.php on line 26
+[21-May-2025 12:01:08 America/Boise] PHP Fatal error:  Uncaught Error: Value of type null is not callable in /home4/cmvtuimy/public_html/website_5b303f54/process_order.php:26
+Stack trace:
+#0 {main}
+  thrown in /home4/cmvtuimy/public_html/website_5b303f54/process_order.php on line 26
