@@ -20,8 +20,8 @@ if ($env === 'dev') {
     $to = 'courtney.forgues@gmail.com';
 }
 
-$fromEmail = "orders@courtneyscookies.com";
-$fromName = "Courtney's Caribbean Cookies";
+$fromEmail = "orders@ordermycookies.com";
+$fromName = "Courtney's Cookies";
 
 $required = ['fullName', 'email', 'phone', 'street', 'city', 'state', 'zip', 'selectedPaymentMethod']; // Added selectedPaymentMethod
 foreach ($required as $field) {
