@@ -5,12 +5,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const orderTotalSpan = document.getElementById('orderTotal');
     const orderForm = document.getElementById('orderForm');
     const alertMessage = document.getElementById('alertMessage');
-    const deliveryMethodRadios = document.querySelectorAll('input[name="delivery_method"]');
+    const deliveryMethodRadios = document.querySelectorAll('input[name="delivery_method"]'); // <-- FIX: Use underscore
     const paymentMethodSelect = document.getElementById('paymentMethod');
     const deliveryFeeDisplay = document.getElementById('deliveryFeeDisplay');
     const paymentMessageDisplay = document.getElementById('paymentMessageDisplay');
 
-
+    // Make sure these keys match data-product attributes in index.html
     const cookiePrices = {
         'chocolate_chip': { single: 6, pair: 10 },
         'oreomg': { single: 6, pair: 10 },
@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', () => {
         'peanut_butter': { single: 6, pair: 10 }
     };
 
-    // Using default/fallback values since we removed get_settings.php call
+    // Using default/fallback values
     let currentDeliveryFee = 2.00;
     deliveryFeeDisplay.textContent = ` (+$${currentDeliveryFee.toFixed(2)})`;
 
@@ -51,7 +51,9 @@ document.addEventListener('DOMContentLoaded', () => {
         subtotal = (pairs * price.pair) + (singles * price.single);
 
         let currentOverallTotal = subtotal;
-        const selectedDeliveryMethod = document.querySelector('input[name="delivery_method"]:checked').value;
+        // FIX: Use underscore and check if element exists before getting value
+        const selectedDeliveryRadio = document.querySelector('input[name="delivery_method"]:checked');
+        const selectedDeliveryMethod = selectedDeliveryRadio ? selectedDeliveryRadio.value : 'pickup'; // Default to pickup if null
 
         if (selectedDeliveryMethod === 'delivery') {
             currentOverallTotal += currentDeliveryFee;
@@ -88,20 +90,11 @@ document.addEventListener('DOMContentLoaded', () => {
         button.addEventListener('click', () => updateQuantity(button.dataset.product, -1));
     });
 
-    quantityInputs.forEach(input => {
-        input.addEventListener('change', () => { // Catch manual changes (though we set it to readonly now)
-            if (parseInt(input.value) < 0 || isNaN(parseInt(input.value))) input.value = 0;
-            document.getElementById(input.dataset.product + '_quantity').value = input.value;
-            calculateTotal();
-        });
-    });
-
     deliveryMethodRadios.forEach(radio => {
         radio.addEventListener('change', calculateTotal);
     });
 
     paymentMethodSelect.addEventListener('change', updatePaymentMessage);
-
 
     // Handle form submission
     orderForm.addEventListener('submit', async (event) => {
@@ -132,16 +125,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: formData
             });
 
-            // Try to parse JSON, regardless of response.ok for more info
             let result;
             try {
                  result = await response.json();
             } catch (jsonError) {
-                // If JSON parsing fails, the server likely sent HTML (PHP error)
                 console.error('JSON Parsing Error:', jsonError);
+                 const textResponse = await response.text(); // Try to get text if JSON fails
+                 console.error('Server Response (Text):', textResponse);
                 throw new Error('Server sent an invalid response (check PHP logs).');
             }
-
 
             if (response.ok && result.success) {
                 alertMessage.classList.remove('info', 'error');

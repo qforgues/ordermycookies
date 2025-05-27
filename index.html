@@ -22,6 +22,7 @@
             font-weight: bold;
             text-align: center;
             display: none; /* Hidden by default */
+            transition: opacity 0.5s ease;
         }
         .alert-message.show {
             display: block;
@@ -40,6 +41,19 @@
             background-color: #d1ecf1;
             color: #0c5460;
             border: 1px solid #bee5eb;
+        }
+        /* Make quantity input non-editable */
+        .quantity-input {
+            text-align: center;
+            border: 1px solid #ccc;
+            width: 40px;
+            pointer-events: none; /* Prevents typing */
+            background-color: #f9f9f9;
+        }
+        .quantity-control button {
+             width: 30px;
+             height: 30px;
+             cursor: pointer;
         }
     </style>
 </head>
