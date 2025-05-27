@@ -163,7 +163,7 @@ $headers .= "Reply-To: $email\r\n";
 $headers .= "Content-Type: text/plain; charset=UTF-8";
 
 $message .= "Name: $fullName\nEmail: $email\nPhone: $phone\n\n";
-$message .= "Address:\n$street\n$city, $state $zip\n\n";
+$message .= "Address:\n$street\n$city $zip\n\n";
 $message .= "Delivery Method: " . ucfirst($deliveryMethod) . "\n";
 $message .= "Preferred Time: " . ($pickupTime ?: 'N/A') . "\n";
 $message .= "Delivery Fee: $" . number_format($actualDeliveryFee, 2) . "\n\n";
