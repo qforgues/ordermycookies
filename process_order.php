@@ -1,8 +1,6 @@
 <?php
 // process_orders.php - Handles NEW Customer Order Submissions & Returns JSON
-ini_set('display_errors', 1);
-ini_set('display_startup_errors', 1);
-error_reporting(E_ALL);
+echo 'got here'; exit();
 // --- Set Header for JSON Response ---
 header('Content-Type: application/json');
 
