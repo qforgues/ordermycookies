@@ -123,7 +123,7 @@ if ($mailSuccess && $dbSuccess) {
         'success' => true,
         'message' => 'Order placed successfully!',
         'totalAmount' => $totalAmount,
-        'selectedPaymentMethod' => $selectedPaymentMethod,
+        'payment_method' => $selectedPaymentMethod,
         'paymentMessage' => $paymentMessage
     ]);
 } else {
