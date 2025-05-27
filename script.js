@@ -5,12 +5,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const orderTotalSpan = document.getElementById('orderTotal');
     const orderForm = document.getElementById('orderForm');
     const alertMessage = document.getElementById('alertMessage');
-    const deliveryMethodRadios = document.querySelectorAll('input[name="delivery_method"]'); // <-- FIX: Use underscore
+    const deliveryMethodRadios = document.querySelectorAll('input[name="delivery_method"]');
     const paymentMethodSelect = document.getElementById('paymentMethod');
     const deliveryFeeDisplay = document.getElementById('deliveryFeeDisplay');
     const paymentMessageDisplay = document.getElementById('paymentMessageDisplay');
 
-    // Make sure these keys match data-product attributes in index.html
     const cookiePrices = {
         'chocolate_chip': { single: 6, pair: 10 },
         'oreomg': { single: 6, pair: 10 },
@@ -19,7 +18,6 @@ document.addEventListener('DOMContentLoaded', () => {
         'peanut_butter': { single: 6, pair: 10 }
     };
 
-    // Using default/fallback values
     let currentDeliveryFee = 2.00;
     deliveryFeeDisplay.textContent = ` (+$${currentDeliveryFee.toFixed(2)})`;
 
@@ -29,13 +27,11 @@ document.addEventListener('DOMContentLoaded', () => {
         'Venmo': 'Please send payment to @CourtneysCookies (Confirm name before sending!)'
     };
 
-    // Function to update payment message display
     const updatePaymentMessage = () => {
         const selectedMethod = paymentMethodSelect.value;
         paymentMessageDisplay.textContent = paymentMessages[selectedMethod] || '';
     };
 
-    // Function to calculate total price
     const calculateTotal = () => {
         let subtotal = 0;
         let cookieCount = 0;
@@ -45,15 +41,14 @@ document.addEventListener('DOMContentLoaded', () => {
             cookieCount += quantity;
         });
 
-        const price = cookiePrices['chocolate_chip']; // Assume all have same price structure
+        const price = cookiePrices['chocolate_chip'];
         const pairs = Math.floor(cookieCount / 2);
         const singles = cookieCount % 2;
         subtotal = (pairs * price.pair) + (singles * price.single);
 
         let currentOverallTotal = subtotal;
-        // FIX: Use underscore and check if element exists before getting value
         const selectedDeliveryRadio = document.querySelector('input[name="delivery_method"]:checked');
-        const selectedDeliveryMethod = selectedDeliveryRadio ? selectedDeliveryRadio.value : 'pickup'; // Default to pickup if null
+        const selectedDeliveryMethod = selectedDeliveryRadio ? selectedDeliveryRadio.value : 'pickup';
 
         if (selectedDeliveryMethod === 'delivery') {
             currentOverallTotal += currentDeliveryFee;
@@ -67,39 +62,24 @@ document.addEventListener('DOMContentLoaded', () => {
         return currentOverallTotal;
     };
 
-    // Function to update quantity
     const updateQuantity = (product, change) => {
         const input = document.querySelector(`.quantity-input[data-product="${product}"]`);
         let currentQuantity = parseInt(input.value, 10);
         currentQuantity += change;
-        if (currentQuantity < 0) {
-            currentQuantity = 0;
-        }
+        if (currentQuantity < 0) currentQuantity = 0;
         input.value = currentQuantity;
-        // Update hidden field
         document.getElementById(product + '_quantity').value = currentQuantity;
         calculateTotal();
     };
 
-    // Event listeners
-    increaseButtons.forEach(button => {
-        button.addEventListener('click', () => updateQuantity(button.dataset.product, 1));
-    });
-
-    decreaseButtons.forEach(button => {
-        button.addEventListener('click', () => updateQuantity(button.dataset.product, -1));
-    });
-
-    deliveryMethodRadios.forEach(radio => {
-        radio.addEventListener('change', calculateTotal);
-    });
-
+    increaseButtons.forEach(button => button.addEventListener('click', () => updateQuantity(button.dataset.product, 1)));
+    decreaseButtons.forEach(button => button.addEventListener('click', () => updateQuantity(button.dataset.product, -1)));
+    deliveryMethodRadios.forEach(radio => radio.addEventListener('change', calculateTotal));
     paymentMethodSelect.addEventListener('change', updatePaymentMessage);
 
-    // Handle form submission
+    // Handle Form Submission - UPDATED FOR DEBUGGING
     orderForm.addEventListener('submit', async (event) => {
         event.preventDefault();
-
         alertMessage.classList.remove('show', 'success', 'error', 'info');
         alertMessage.textContent = '';
 
@@ -112,7 +92,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        calculateTotal(); // Ensure hidden fields are set
+        calculateTotal();
 
         alertMessage.textContent = 'Placing your order... please wait.';
         alertMessage.classList.add('show', 'info');
@@ -120,19 +100,23 @@ document.addEventListener('DOMContentLoaded', () => {
         const formData = new FormData(orderForm);
 
         try {
-            const response = await fetch('process_orders.php', { // Target process_orders.php
+            const response = await fetch('process_orders.php', {
                 method: 'POST',
                 body: formData
             });
 
+            // --- DEBUGGING CHANGE: Get response as text first ---
+            const responseText = await response.text();
+            console.log("Server Response Text:", responseText); // Log raw response
+            // --- END DEBUGGING CHANGE ---
+
             let result;
             try {
-                 result = await response.json();
+                 result = JSON.parse(responseText); // Try to parse the text
             } catch (jsonError) {
                 console.error('JSON Parsing Error:', jsonError);
-                 const textResponse = await response.text(); // Try to get text if JSON fails
-                 console.error('Server Response (Text):', textResponse);
-                throw new Error('Server sent an invalid response (check PHP logs).');
+                // Show the raw text if JSON parsing fails
+                throw new Error(`Server sent an invalid response. See console (F12) for "Server Response Text". It likely contains a PHP error.`);
             }
 
             if (response.ok && result.success) {
@@ -158,7 +142,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Initial setup on load
     calculateTotal();
     updatePaymentMessage();
 });
