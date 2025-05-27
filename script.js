@@ -119,7 +119,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     orderForm.addEventListener('submit', async (event) => {
         event.preventDefault();
-
         alertMessage.classList.remove('show', 'success', 'error', 'info');
         alertMessage.textContent = '';
 
@@ -132,7 +131,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        calculateTotal(); // Ensure hidden fields are set
+        calculateTotal();
 
         alertMessage.textContent = 'Placing your order... please wait.';
         alertMessage.classList.add('show', 'info');
@@ -159,14 +158,17 @@ document.addEventListener('DOMContentLoaded', () => {
             if (response.ok && result.success) {
                 alertMessage.classList.remove('info', 'error');
                 alertMessage.classList.add('success');
-                // --- THIS IS THE CORRECTED LINE ---
-                alertMessage.innerHTML = `Order placed successfully! (ID: ${result.orderId}).<br>Total: ${result.totalAmount}.<br><strong>${result.paymentMessage}</strong>`;
-                // --- END CORRECTED LINE ---
+                // Use the local paymentMessages object for the payment message
+                const lastPaymentMethod = paymentMethodSelect.value;
+                const paymentMsg = paymentMessages[lastPaymentMethod] || '';
+                alertMessage.innerHTML = `Order placed successfully! (ID: ${result.orderId}).<br>Total: ${result.totalAmount}.<br><strong>${paymentMsg}</strong>`;
                 orderForm.reset();
                 quantityInputs.forEach(input => {
                     input.value = 0;
                     document.getElementById(input.dataset.product + '_quantity').value = 0;
                 });
+                // Restore the payment method and update the message
+                paymentMethodSelect.value = lastPaymentMethod;
                 calculateTotal();
                 updatePaymentMessage(); // Reset payment message display
             } else {
