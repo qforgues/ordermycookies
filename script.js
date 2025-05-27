@@ -100,7 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const formData = new FormData(orderForm);
 
         try {
-            const response = await fetch('process_orders.php', {
+            const response = await fetch('process_order.php', {
                 method: 'POST',
                 body: formData
             });
