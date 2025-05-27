@@ -103,7 +103,7 @@ $fromEmail = "courtney@ordermycookies.com";
 $fromName = "Courtney's Cookies";
 
 // Input Validation
-$required = ['fullName', 'email', 'phone', 'street', 'city', 'state', 'zip', 'selectedPaymentMethod'];
+$required = ['fullName', 'email', 'phone', 'state', 'zip', 'selectedPaymentMethod'];
 foreach ($required as $field) {
     if (empty($_POST[$field])) {
         echo json_encode(['success' => false, 'message' => "Missing required field: $field"]);
