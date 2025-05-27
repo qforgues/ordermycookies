@@ -85,6 +85,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['full_name'], $_POST['
 
 // Output clean JSON (once!)
 ob_clean(); // clear anything accidentally printed
+echo json_encode($response);
 
 ob_end_flush(); // now flush the buffer cleanly
 exit;
