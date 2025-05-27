@@ -47,7 +47,7 @@ $paymentMessage = htmlspecialchars($_POST['paymentMessage']);
 $dbSuccess = false;
 try {
     $stmt = $pdo->prepare("INSERT INTO cookie_orders (
-        full_name,
+        fullName,
         email,
         phone,
         street,
