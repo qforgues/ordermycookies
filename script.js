@@ -179,7 +179,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (result.success) {
                 alertMessage.classList.add('show', 'success');
-                alertMessage.innerHTML = `Order placed successfully! Your totals is $${result.totalAmount}.<br>Payment Method: ${result.selectedPaymentMethod}.<br><strong>${result.paymentMessage}</strong>`;
+                alertMessage.innerHTML = `Order placed successfully! Your total is ${result.totalAmount}.<br>Payment Method: ${result.selectedPaymentMethod}.<br><strong>${result.paymentMessage}</strong>`;
                 orderForm.reset();
                 quantityInputs.forEach(input => input.value = 0);
                 calculateTotal();
