@@ -77,9 +77,9 @@ document.addEventListener('DOMContentLoaded', () => {
     deliveryMethodRadios.forEach(radio => radio.addEventListener('change', calculateTotal));
     paymentMethodSelect.addEventListener('change', updatePaymentMessage);
 
-    // Handle Form Submission - UPDATED FOR DEBUGGING
     orderForm.addEventListener('submit', async (event) => {
         event.preventDefault();
+
         alertMessage.classList.remove('show', 'success', 'error', 'info');
         alertMessage.textContent = '';
 
@@ -100,7 +100,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const formData = new FormData(orderForm);
 
         try {
-            const response = await fetch('process_order.php', {
+            const response = await fetch('process_orders.php', {
                 method: 'POST',
                 body: formData
             });
@@ -110,16 +110,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
             let result;
             try {
-                result = JSON.parse(responseText);
+                 result = JSON.parse(responseText);
             } catch (jsonError) {
                 console.error('JSON Parsing Error:', jsonError);
-                throw new Error(`Server sent invalid JSON. Check PHP output.`);
+                throw new Error('Server sent an invalid response. See console (F12) for "Server Response Text". It likely contains a PHP error.');
             }
 
             if (response.ok && result.success) {
                 alertMessage.classList.remove('info', 'error');
                 alertMessage.classList.add('success');
-                alertMessage.innerHTML = `Order placed successfully! (ID: ${result.orderId}).<br>We've sent a confirmation email.`;
+                // --- THIS IS THE UPDATED LINE ---
+                alertMessage.innerHTML = `Order placed successfully! (ID: ${result.orderId}).<br>Total: ${result.totalAmount}.<br><strong>${result.paymentMessage}</strong>`;
+                // --- END UPDATED LINE ---
                 orderForm.reset();
                 quantityInputs.forEach(input => {
                     input.value = 0;
