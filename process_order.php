@@ -1,145 +1,51 @@
 <?php
+require_once 'db_connect.php';
+require_once 'send_email.php';
+
 header('Content-Type: application/json');
-require_once 'db_connect.php'; // Include your database connection
 
-$env = getenv('DEPLOY_ENV');
-
-// Fallback logic if not explicitly set
-if (!$env) {
-    $hostname = $_SERVER['HTTP_HOST'] ?? 'localhost';
-    if (str_contains($hostname, 'dev.') || str_contains($hostname, 'localhost')) {
-        $env = 'dev';
-    } else {
-        $env = 'prod';
-    }
-}
-
-if ($env === 'dev') {
-    $to = 'quentin.forgues@gmail.com'; // 👈 Replace with your dev/test email
-} else {
-    $to = 'courtney.forgues@gmail.com';
-}
-
-$fromEmail = "orders@ordermycookies.com";
-$fromName = "Courtney's Cookies";
-
-$required = ['fullName', 'email', 'phone', 'street', 'city', 'state', 'zip', 'selectedPaymentMethod']; // Added selectedPaymentMethod
-foreach ($required as $field) {
-    if (empty($_POST[$field])) {
-        echo json_encode(['success' => false, 'message' => "Missing required field: $field"]);
-        exit;
-    }
-}
-
-$fullName = htmlspecialchars($_POST['fullName']);
-$email = htmlspecialchars($_POST['email']);
-$phone = htmlspecialchars($_POST['phone']);
-$street = htmlspecialchars($_POST['street']);
-$city = htmlspecialchars($_POST['city']);
-$state = htmlspecialchars($_POST['state']);
-$zip = htmlspecialchars($_POST['zip']);
-
-$deliveryMethod = htmlspecialchars($_POST['deliveryMethod'] ?? 'pickup');
-$pickupTime = htmlspecialchars($_POST['pickupTime'] ?? ''); // CORRECTED LINE 26
-$actualDeliveryFee = (float)($_POST['actualDeliveryFee'] ?? 0.00); // Use the actual fee from JS
-
-$chocochipQuantity = (int)($_POST['chocochipQuantity'] ?? 0);
-$oreomgQuantity = (int)($_POST['oreomgQuantity'] ?? 0);
-$snickerdoodleQuantity = (int)($_POST['snickerdoodleQuantity'] ?? 0);
-$peanutbutterQuantity = (int)($_POST['peanutbutterQuantity'] ?? 0);
-$maplebaconQuantity = (int)($_POST['maplebaconQuantity'] ?? 0);
-$totalAmount = htmlspecialchars($_POST['totalAmount'] ?? '$0.00'); // Keep as string "$XX.XX" for email
-
-$selectedPaymentMethod = htmlspecialchars($_POST['selectedPaymentMethod']);
-$paymentMessage = htmlspecialchars($_POST['paymentMessage']);
-
-$dbSuccess = false;
 try {
-    $stmt = $pdo->prepare("INSERT INTO cookie_orders (
-        full_name,
-        email,
-        phone,
-        street,
-        city,
-        state,
-        zip,
-        chocolate_chip_quantity,
-        peanut_butter_quantity,
-        oreomg_quantity,
-        snickerdoodle_quantity,
-        maplebacon_quantity,
-        total_amount,
-        delivery_method,
-        pickup_time,
-        delivery_fee,
-        payment_method
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    $data = json_decode(file_get_contents('php://input'), true);
 
-    $stmt->execute([
-        $fullName,
-        $email,
-        $phone,
-        $street,
-        $city,
-        $state,
-        $zip,
-        $chocochipQuantity,
-        $peanutbutterQuantity,
-        $oreomgQuantity,
-        $snickerdoodleQuantity,
-        $maplebaconQuantity,
-        $totalAmount,
-        $deliveryMethod,
-        $pickupTime,
-        $actualDeliveryFee,
-        $selectedPaymentMethod
-    ]);
+    $fullName = $data['fullName'] ?? '';
+    $email = $data['email'] ?? '';
+    $phone = $data['phone'] ?? '';
+    $street = $data['street'] ?? '';
+    $city = $data['city'] ?? '';
+    $state = $data['state'] ?? '';
+    $zip = $data['zip'] ?? '';
+    $deliveryMethod = $data['deliveryMethod'] ?? 'pickup';
+    $paymentMethod = $data['paymentMethod'] ?? 'Cash';
+    $pickupTime = $data['pickupTime'] ?? '';
+    $items = $data['items'] ?? '';
+    $total = $data['total'] ?? 0.00;
 
-    $dbSuccess = true;
-} catch (PDOException $e) {
-    error_log("Database Error in process_order.php: " . $e->getMessage());
-    $dbSuccess = false;
+    $stmt = $pdo->prepare("INSERT INTO orders (full_name, email, phone, street, city, state, zip, delivery_method, payment_method, pickup_time, items, total, status, created_at)
+                           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'new', NOW())");
+
+    $stmt->execute([$fullName, $email, $phone, $street, $city, $state, $zip, $deliveryMethod, $paymentMethod, $pickupTime, $items, $total]);
+
+    // Send confirmation email to customer
+    $subject = "Thanks for your order from Courtneys Cookies!";
+    $body = '
+    <html>
+    <body style="font-family: Quicksand, sans-serif; color: #3E2C1C; background-color: #FFF7ED; padding: 20px;">
+        <div style="max-width:600px;margin:auto;background:#ffffff;border-radius:10px;padding:20px;box-shadow:0 0 10px rgba(0,0,0,0.05);">
+            <img src="https://i.postimg.cc/VsHp5Dcs/logo.png" style="max-width:150px;margin:auto;display:block;" alt="Courtneys Cookies"/>
+            <h2 style="color:#6B4423;text-align:center;">Thank you! Weve received your order!</h2>
+            <p style="text-align:center;">Were baking up some love for you now. 🍪</p>
+            <p style="text-align:center;">Please take a moment to <a href="https://facebook.com/ordermycookies" target="_blank">like and share us on Facebook</a>, and tell your friends about <strong>OrderMyCookies.com</strong>!</p>
+            <p style="text-align:center;">More sweet surprises and discounts are coming soon. Keep an eye out!</p>
+            <p style="text-align:center;">- Courtney</p>
+        </div>
+    </body>
+    </html>';
+
+    sendCustomerEmail($email, $subject, $body);
+
+    echo json_encode(['success' => true, 'message' => 'Order placed successfully.']);
+
+} catch (Exception $e) {
+    http_response_code(500);
+    echo json_encode(['success' => false, 'message' => 'Server error. Please try again.', 'error' => $e->getMessage()]);
 }
-
-$subject = "New Cookie Order from $fullName";
-$headers = "From: $fromName <$fromEmail>\r\n";
-$headers .= "Reply-To: $email\r\n";
-$headers .= "Content-Type: text/plain; charset=UTF-8";
-
-$message = "New cookie order:\n\n";
-$message .= "Name: $fullName\nEmail: $email\nPhone: $phone\n\n";
-$message .= "Address:\n$street\n$city, $state $zip\n\n";
-$message .= "Delivery Method: " . ucfirst($deliveryMethod) . "\n";
-$message .= "Preferred Time: " . ($pickupTime ?: 'N/A') . "\n";
-$message .= "Delivery Fee: $" . number_format($actualDeliveryFee, 2) . "\n\n";
-
-$message .= "Payment Method: " . $selectedPaymentMethod . "\n";
-if (!empty($paymentMessage)) {
-    $message .= "Payment Instructions: " . $paymentMessage . "\n\n";
-}
-
-$message .= "Order Details:\n";
-if ($chocochipQuantity > 0) $message .= "Chocolate Chip: $chocochipQuantity\n";
-if ($oreomgQuantity > 0) $message .= "Ore-OMG: $oreomgQuantity\n";
-if ($snickerdoodleQuantity > 0) $message .= "Snickerdoodle: $snickerdoodleQuantity\n";
-if ($peanutbutterQuantity > 0) $message .= "Peanut Butter: $peanutbutterQuantity\n";
-if ($maplebaconQuantity > 0) $message .= "Maple Bacon: $maplebaconQuantity\n";
-$message .= "\nTotal: $totalAmount\n";
-
-$mailSuccess = mail($to, $subject, $message, $headers);
-
-if ($mailSuccess && $dbSuccess) {
-    echo json_encode([
-        'success' => true,
-        'message' => 'Order placed successfully!',
-        'totalAmount' => $totalAmount,
-        'selectedPaymentMethod' => $selectedPaymentMethod,
-        'paymentMessage' => $paymentMessage
-    ]);
-} else {
-    $errorMessage = "Failed to place order. ";
-    if (!$mailSuccess) $errorMessage .= "Email sending failed. ";
-    if (!$dbSuccess) $errorMessage .= "Database saving failed.";
-    echo json_encode(['success' => false, 'message' => $errorMessage]);
-}
-?>

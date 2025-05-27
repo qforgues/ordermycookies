@@ -1,156 +1,103 @@
 <?php
 session_start();
-// Check if user is logged in and has keymaster (0) or owner (1) role
-if (!isset($_SESSION['user_id']) || ($_SESSION['role'] !== 0 && $_SESSION['role'] !== 1)) {
-    header('Location: admin.html?auth=failed'); // Redirect to login page if not authorized
+$role = strtolower($_SESSION['role'] ?? '');
+if (!in_array($role, ['0', 'admin'])) {
+    header('Location: admin.html?auth=failed');
     exit;
 }
 
 require_once 'db_connect.php';
+require_once 'send_email.php';
 
-// Handle status update
+$stmt = $pdo->query("SELECT * FROM orders ORDER BY created_at DESC");
+$orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+function formatPhone($number) {
+    $digits = preg_replace('/\D/', '', $number);
+    return preg_match('/^(\d{3})(\d{3})(\d{4})$/', $digits, $matches) 
+        ? "($matches[1]) $matches[2]-$matches[3]" 
+        : $number;
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['order_id'], $_POST['action'])) {
-    $orderId = $_POST['order_id'];
+    $id = (int) $_POST['order_id'];
     $action = $_POST['action'];
 
-    $newStatus = match($action) {
-        'paid' => 'Paid',
-        'cancelled' => 'Cancelled',
+    $newStatus = match ($action) {
+        'ready' => 'ready',
+        'paid' => 'paid',
+        'cancelled' => 'cancelled',
         default => null
     };
 
     if ($newStatus) {
-        $stmt = $pdo->prepare("UPDATE cookie_orders SET status = ? WHERE id = ?");
-        $stmt->execute([$newStatus, $orderId]);
+        $stmt = $pdo->prepare("UPDATE orders SET status = ? WHERE id = ?");
+        $stmt->execute([$newStatus, $id]);
+
+        if ($newStatus === 'ready') {
+            $stmt = $pdo->prepare("SELECT email FROM orders WHERE id = ?");
+            $stmt->execute([$id]);
+            $email = $stmt->fetchColumn();
+
+            $subject = "Your Courtney’s Cookies order is on its way!";
+            $body = ' <html><body style="font-family: Quicksand, sans-serif; color: #3E2C1C; background-color: #FFF7ED; padding: 20px;">
+                <div style="max-width:600px;margin:auto;background:#ffffff;border-radius:10px;padding:20px;box-shadow:0 0 10px rgba(0,0,0,0.05);">
+                    <img src="https://i.postimg.cc/VsHp5Dcs/logo.png" style="max-width:150px;margin:auto;display:block;" alt="Courtney’s Cookies"/>
+                    <h2 style="color:#6B4423;text-align:center;">Your cookies are on the way! 🍪</h2>
+                    <p style="text-align:center;">Thank you for ordering with us. We hope you LOVE them.</p>
+                    <p style="text-align:center;">Don’t forget to <a href="https://facebook.com/ordermycookies" target="_blank">like and share us on Facebook</a> and tell friends and family about <strong>OrderMyCookies.com</strong>.</p>
+                    <p style="text-align:center;">We’re rolling out fun discounts and cookie surprises soon, so stay tuned!</p>
+                    <p style="text-align:center;">&ndash; Courtney</p>
+                </div></body></html>';
+
+            sendCustomerEmail($email, $subject, $body);
+        }
+        header('Location: admin_orders.php');
+        exit;
     }
-
-    header("Location: admin_orders.php"); // Prevent form resubmit/white screen
-    exit;
 }
-
-// Fetch all orders
-$stmt = $pdo->query("SELECT * FROM cookie_orders ORDER BY order_date DESC");
-$orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>Admin Orders</title>
+    <title>Admin - Orders</title>
     <link rel="stylesheet" href="style.css">
     <style>
-        .orders-container {
-            max-width: 900px;
-            margin: 40px auto;
-            background: white;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 0 15px rgba(0,0,0,0.1);
-        }
-        .order-card {
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 20px;
-        }
-        .status-paid { background-color: #e0ffe0; }
-        .status-fulfilled { background-color: #fffbe0; }
-        .status-cancelled { background-color: #ffe0e0; }
-
-        .order-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-        .order-toggle {
-            background-color: var(--accent-gold);
-            border: none;
-            padding: 6px 10px;
-            margin-left: 5px;
-            cursor: pointer;
-            border-radius: 6px;
-        }
-        .order-toggle.cancel {
-            background-color: #e67c7c;
-        }
-        .toggle-fulfilled {
-            display: flex;
-            align-items: center;
-            margin-bottom: 20px;
-            font-weight: bold;
-            font-size: 1em;
-            color: var(--primary-brown);
-        }
-        .toggle-fulfilled input {
-            margin-right: 8px;
-            transform: scale(1.3);
-        }
+        .order-card { border: 1px solid #ccc; padding: 20px; margin-bottom: 20px; border-radius: 8px; background-color: #fff; }
+        .order-header { font-weight: bold; margin-bottom: 10px; font-size: 1.2em; }
+        .order-items { margin: 10px 0; }
+        .order-actions { display: flex; gap: 10px; }
+        .order-actions form { flex: 1; }
+        .order-actions button { width: 100%; padding: 10px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
+        .new { background-color: #e0f7fa; }
+        .ready { background-color: #fff3cd; }
+        .paid { background-color: #d4edda; }
+        .cancelled { background-color: #f8d7da; }
     </style>
 </head>
 <body>
-    <div class="orders-container">
-        <h1>Orders Admin</h1>
-        <label class="toggle-fulfilled">
-            <input type="checkbox" id="showFulfilled"> Show Fulfilled Orders
-        </label>
-
-        <?php foreach ($orders as $order): ?>
-            <?php
-                $status = strtolower($order['status']);
-                $statusClass = match($status) {
-                    'paid' => 'status-paid',
-                    'fulfilled' => 'status-fulfilled',
-                    'cancelled' => 'status-cancelled',
-                    default => ''
-                };
-
-                $itemSummary = [];
-                foreach (['chocolate_chip_quantity', 'peanut_butter_quantity', 'oreomg_quantity', 'snickerdoodle_quantity', 'maplebacon_quantity'] as $flavor) {
-                    if ($order[$flavor] > 0) {
-                        $label = ucwords(str_replace('_', ' ', str_replace('_quantity', '', $flavor)));
-                        $itemSummary[] = "{$label}: {$order[$flavor]}";
-                    }
-                }
-
-                $isFulfilled = $status === 'fulfilled';
-            ?>
-            <div class="order-card <?= $statusClass ?> <?= $isFulfilled ? 'fulfilled-hidden' : '' ?>">
-                <div class="order-header">
-                    <strong>ORD-<?= str_pad($order['id'], 6, '0', STR_PAD_LEFT) ?> — <?= htmlspecialchars($order['full_name']) ?></strong>
-                    <div>
-                        <?php if (!$isFulfilled): ?>
-                            <?php if ($status !== 'paid'): ?>
-                                <form method="post" style="display:inline;">
-                                    <input type="hidden" name="order_id" value="<?= $order['id'] ?>">
-                                    <input type="hidden" name="action" value="paid">
-                                    <button class="order-toggle" type="submit">Mark as Paid</button>
-                                </form>
-                            <?php endif; ?>
-                            <form method="post" style="display:inline;">
-                                <input type="hidden" name="order_id" value="<?= $order['id'] ?>">
-                                <input type="hidden" name="action" value="cancelled">
-                                <button class="order-toggle cancel" type="submit">Cancel Order</button>
-                            </form>
-                        <?php endif; ?>
-                    </div>
+<div class="container">
+    <h1>Order Management</h1>
+    <?php foreach ($orders as $order): ?>
+        <div class="order-card <?= $order['status'] ?>">
+            <div class="order-header"> <?= htmlspecialchars($order['full_name']) ?> </div>
+            <div><strong>Email:</strong> <a href="mailto:<?= htmlspecialchars($order['email']) ?>"><?= htmlspecialchars($order['email']) ?></a></div>
+            <div><strong>Phone:</strong> <a href="tel:<?= htmlspecialchars($order['phone']) ?>"><?= formatPhone($order['phone']) ?></a></div>
+            <div class="order-items"><strong>Items:</strong> <?= nl2br(htmlspecialchars($order['items'])) ?></div>
+            <?php if ($order['status'] !== 'paid'): ?>
+                <div class="order-actions">
+                    <?php if ($order['status'] === 'new'): ?>
+                        <form method="post"><input type="hidden" name="order_id" value="<?= $order['id'] ?>"><input type="hidden" name="action" value="ready"><button style="background-color:#FFD580;">Ready</button></form>
+                        <form method="post"><input type="hidden" name="order_id" value="<?= $order['id'] ?>"><input type="hidden" name="action" value="cancelled"><button style="background-color:#f8d7da;">Cancelled</button></form>
+                    <?php elseif ($order['status'] === 'ready'): ?>
+                        <form method="post"><input type="hidden" name="order_id" value="<?= $order['id'] ?>"><input type="hidden" name="action" value="paid"><button style="background-color:#d4edda;">Paid</button></form>
+                        <form method="post"><input type="hidden" name="order_id" value="<?= $order['id'] ?>"><input type="hidden" name="action" value="cancelled"><button style="background-color:#f8d7da;">Cancelled</button></form>
+                    <?php endif; ?>
                 </div>
-                <p><strong>Items:</strong> <?= implode(', ', $itemSummary) ?></p>
-                <p><strong>Total | Method:</strong> <?= htmlspecialchars($order['total_amount']) ?> | <?= $order['payment_method'] ?></p>
-                <p><strong>Email:</strong> <?= htmlspecialchars($order['email']) ?> | <strong>Phone:</strong> <?= htmlspecialchars($order['phone']) ?></p>
-                <p><strong>Delivery:</strong> <?= $order['delivery_method'] ?> @ <?= $order['pickup_time'] ?></p>
-            </div>
-        <?php endforeach; ?>
-    </div>
-
-    <script>
-        const toggleBox = document.getElementById('showFulfilled');
-        toggleBox.addEventListener('change', () => {
-            document.querySelectorAll('.fulfilled-hidden').forEach(card => {
-                card.style.display = toggleBox.checked ? 'block' : 'none';
-            });
-        });
-    </script>
+            <?php endif; ?>
+        </div>
+    <?php endforeach; ?>
+</div>
 </body>
 </html>
