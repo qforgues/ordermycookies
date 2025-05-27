@@ -65,7 +65,14 @@ h1 {
   font-size: 2.8em;
   color: var(--primary-brown);
   text-align: center;
-  margin-bottom: 10px;
+  /* margin-bottom: 10px; */ /* Removed margin-bottom to avoid extra spacing */
+  margin-top: 0; /* Ensure no top margin */
+  line-height: 1.2; /* Adjust line height for better spacing */
+  padding: 0 10px; /* Add horizontal padding for better text alignment */
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+  /* Optional: Add a subtle text shadow for depth */
+  font-weight: 700; /* Make the title bold */
+  letter-spacing: 1px; /* Slightly increase letter spacing for readability */
 }
 
 .subtitle {

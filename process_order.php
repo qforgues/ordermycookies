@@ -126,6 +126,7 @@ $chocochipQuantity = (int)($_POST['chocochipQuantity'] ?? 0);
 $oreomgQuantity = (int)($_POST['oreomgQuantity'] ?? 0);
 $snickerdoodleQuantity = (int)($_POST['snickerdoodleQuantity'] ?? 0);
 $peanutbutterQuantity = (int)($_POST['peanutbutterQuantity'] ?? 0);
+$maplebaconQuantity = (int)($_POST['maplebaconQuantity'] ?? 0);
 $totalAmount = htmlspecialchars($_POST['totalAmount'] ?? '$0.00');
 $selectedPaymentMethod = htmlspecialchars($_POST['selectedPaymentMethod']);
 $paymentMessage = htmlspecialchars($_POST['paymentMessage']);
@@ -137,13 +138,13 @@ $orderId = null; // Variable to hold the new order ID
 try {
     $stmt = $pdo->prepare("INSERT INTO cookie_orders (
         full_name, email, phone, street, city, state, zip,
-        chocolate_chip_quantity, peanut_butter_quantity, oreomg_quantity, snickerdoodle_quantity,
+        chocolate_chip_quantity, peanut_butter_quantity, oreomg_quantity, snickerdoodle_quantity,maplebacon_quantity,
         total_amount, delivery_method, pickup_time, delivery_fee, payment_method
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
     $stmt->execute([
         $fullName, $email, $phone, $street, $city, $state, $zip,
-        $chocochipQuantity, $peanutbutterQuantity, $oreomgQuantity, $snickerdoodleQuantity,
+        $chocochipQuantity, $peanutbutterQuantity, $oreomgQuantity, $snickerdoodleQuantity,$maplebaconQuantity,
         $totalAmount, $deliveryMethod, $pickupTime, $actualDeliveryFee, $selectedPaymentMethod
     ]);
 
@@ -176,6 +177,7 @@ if ($chocochipQuantity > 0) $message .= "Chocolate Chip: $chocochipQuantity\n";
 if ($oreomgQuantity > 0) $message .= "Ore-OMG: $oreomgQuantity\n";
 if ($snickerdoodleQuantity > 0) $message .= "Snickerdoodle: $snickerdoodleQuantity\n";
 if ($peanutbutterQuantity > 0) $message .= "Peanut Butter: $peanutbutterQuantity\n";
+if ($maplebaconQuantity > 0) $message .= "Maple Bacon: $maplebaconQuantity\n";
 $message .= "\nTotal: $totalAmount\n";
 
 $mailSuccess = mail($to, $subject, $message, $headers);

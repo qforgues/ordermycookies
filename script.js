@@ -14,7 +14,9 @@ document.addEventListener('DOMContentLoaded', () => {
         'chocochip': { single: 6, pair: 10 },
         'oreomg': { single: 6, pair: 10 },
         'snickerdoodle': { single: 6, pair: 10 },
-        'peanutbutter': { single: 6, pair: 10 }
+        'maplebacon': { single: 6, pair: 10 },
+        'peanutbutter': { single: 6, pair: 10 },
+        'maplebacon': { single: 6, pair: 10 }
     };
 
     let currentDeliveryFee = 0;
