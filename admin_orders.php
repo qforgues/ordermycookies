@@ -32,37 +32,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['order_id'], $_POST['a
         $stmt = $pdo->prepare("UPDATE cookie_orders SET status = ? WHERE id = ?");
         $stmt->execute([$newStatus, $orderId]);
 
-        $stmt = $pdo->prepare("SELECT email FROM cookie_orders WHERE id = ?");
-        $stmt->execute([$orderId]);
-        $email = $stmt->fetchColumn();
+        // *** Send 'Ready' email (On Its Way) ***
+        if ($newStatus === 'Ready') {
+            $stmt = $pdo->prepare("SELECT email FROM cookie_orders WHERE id = ?");
+            $stmt->execute([$orderId]);
+            $email = $stmt->fetchColumn();
 
-        if ($email) {
-            if ($newStatus === 'Ready') {
-                $subject = "We've Received Your Courtneys Cookies Order! 🍪";
-                 $body = '<html><body style="font-family: Quicksand, sans-serif; color: #3E2C1C; background-color: #FFF7ED; padding: 20px;">
-                         <div style="max-width:600px;margin:auto;background:#ffffff;border-radius:10px;padding:20px;box-shadow:0 0 10px rgba(0,0,0,0.05);">
-                             <img src="https://i.postimg.cc/VsHp5Dcs/logo.png" style="max-width:150px;margin:auto;display:block;" alt="Courtneys Cookies"/>
-                             <h2 style="color:#6B4423;text-align:center;">Thank you for your order!</h2>
-                             <p style="text-align:center;">We\'ve received your order and will start baking soon! We hope you LOVE them.</p>
-                             <p style="text-align:center;">Don\'t forget to <a href="https://facebook.com/ordermycookies" target="_blank">like and share us on Facebook</a> and tell friends and family about <strong>OrderMyCookies.com</strong>.</p>
-                             <p style="text-align:center;">We\'re rolling out fun discounts and cookie surprises soon, so stay tuned!</p>
-                             <p style="text-align:center;">Sweetest Regards,<br>- Courtney</p>
-                         </div></body></html>';
-                sendCustomerEmail($email, $subject, $body);
-            } elseif ($newStatus === 'Paid') {
+            if ($email) {
                 $subject = "Your Courtneys Cookies order is on its way! 🍪";
                 $body = '<html><body style="font-family: Quicksand, sans-serif; color: #3E2C1C; background-color: #FFF7ED; padding: 20px;">
-                         <div style="max-width:600px;margin:auto;background:#ffffff;border-radius:10px;padding:20px;box-shadow:0 0 10px rgba(0,0,0,0.05);">
-                             <img src="https://i.postimg.cc/VsHp5Dcs/logo.png" style="max-width:150px;margin:auto;display:block;" alt="Courtneys Cookies"/>
-                             <h2 style="color:#6B4423;text-align:center;">Your cookies are on the way!</h2>
-                             <p style="text-align:center;">Your order has been marked as paid and will be with you soon. We hope you LOVE them!</p>
-                             <p style="text-align:center;">Don\'t forget to <a href="https://facebook.com/ordermycookies" target="_blank">like and share us on Facebook</a> and tell friends and family about <strong>OrderMyCookies.com</strong>.</p>
-                             <p style="text-align:center;">We\'re rolling out fun discounts and cookie surprises soon, so stay tuned!</p>
-                             <p style="text-align:center;">Sweetest Regards,<br>- Courtney</p>
-                         </div></body></html>';
+                        <div style="max-width:600px;margin:auto;background:#ffffff;border-radius:10px;padding:20px;box-shadow:0 0 10px rgba(0,0,0,0.05);">
+                            <img src="images/logo.png" style="max-width:150px;margin:auto;display:block;" alt="Courtneys Cookies"/>
+                            <h2 style="color:#6B4423;text-align:center;">Your cookies are on the way! 🍪</h2>
+                            <p style="text-align:center;">Great news! Your delicious cookie order has been prepared and is now on its way (or ready for pickup!). We hope you LOVE them.</p>
+                            <p style="text-align:center;">Don’t forget to <a href="https://facebook.com/ordermycookies" target="_blank">like and share us on Facebook</a> and tell friends and family about <strong>OrderMyCookies.com</strong>.</p>
+                            <p style="text-align:center;">We’re rolling out fun discounts and cookie surprises soon, so stay tuned!</p>
+                            <p style="text-align:center;">Sweetest Regards,<br>- Courtney</p>
+                        </div></body></html>';
                 sendCustomerEmail($email, $subject, $body);
             }
         }
+        // *** NO 'Paid' email is sent anymore ***
     }
 
     header("Location: admin_orders.php");
@@ -85,67 +75,40 @@ $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
             --primary-brown: #3E2C1C;
         }
         .orders-container {
-            max-width: 900px;
-            margin: 40px auto;
-            background: white;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 0 15px rgba(0,0,0,0.1);
+            max-width: 900px; margin: 40px auto; background: white;
+            padding: 30px; border-radius: 12px; box-shadow: 0 0 15px rgba(0,0,0,0.1);
         }
         .order-card {
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 20px;
-            transition: background-color 0.3s ease;
+            border: 1px solid #ccc; border-radius: 8px; padding: 15px;
+            margin-bottom: 20px; transition: background-color 0.3s ease;
         }
+        .status-new { background-color: #e0f7fa; }
+        .status-pending { background-color: #e0f7fa; }
         .status-ready { background-color: #fffbe0; }
         .status-paid { background-color: #e0ffe0; }
         .status-cancelled { background-color: #ffe0e0; }
-        .status-fulfilled { background-color: #e0e8ff; } /* Kept in case you use it later */
+        .status-fulfilled { background-color: #e0e8ff; }
 
         .order-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start; /* Align to top */
-            flex-wrap: wrap;
-            margin-bottom: 10px;
+            display: flex; justify-content: space-between; align-items: flex-start;
+            flex-wrap: wrap; margin-bottom: 10px;
         }
         .order-name {
-            font-weight: bold;
-            font-size: 1.1em;
-            color: var(--primary-brown);
-            flex-grow: 1; /* Allow name to grow */
+            font-weight: bold; font-size: 1.1em; color: var(--primary-brown); flex-grow: 1;
         }
         .order-status-display {
-            font-weight: bold;
-            font-size: 1em;
-            text-align: right;
-            color: var(--primary-brown);
-            flex-shrink: 0;
-            padding-left: 10px;
+            font-weight: bold; font-size: 1em; text-align: right;
+            color: var(--primary-brown); flex-shrink: 0; padding-left: 10px;
         }
         .button-container {
-            width: 100%;
-            display: flex;
-            justify-content: space-between;
-            gap: 2%;
-            margin-top: 10px; /* Space above buttons */
+            width: 100%; display: flex; justify-content: space-between;
+            gap: 2%; margin-top: 10px;
         }
-        .button-container form {
-            width: 49%;
-            display: inline-block;
-        }
+        .button-container form { width: 49%; display: inline-block; }
         .order-toggle {
-            background-color: var(--accent-gold);
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            cursor: pointer;
-            border-radius: 6px;
-            width: 100%;
-            box-sizing: border-box;
-            font-size: 0.95em;
+            background-color: var(--accent-gold); color: white; border: none;
+            padding: 10px 15px; cursor: pointer; border-radius: 6px;
+            width: 100%; box-sizing: border-box; font-size: 0.95em;
             transition: background-color 0.2s ease;
         }
         .order-toggle:hover { opacity: 0.9; }
@@ -153,47 +116,22 @@ $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
         .order-toggle.paid { background-color: #5cb85c; }
         .order-toggle.cancel { background-color: #d9534f; }
 
-        .filter-controls { /* Container for checkboxes */
-            margin-bottom: 20px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid #eee;
+        .filter-controls {
+            margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #eee;
         }
         .toggle-filter {
-            display: inline-flex; /* Use inline-flex for alignment */
-            align-items: center;
-            margin-right: 20px; /* Space between checkboxes */
-            font-weight: bold;
-            font-size: 1em;
-            color: var(--primary-brown);
+            display: inline-flex; align-items: center; margin-right: 20px;
+            font-weight: bold; font-size: 1em; color: var(--primary-brown);
         }
-        .toggle-filter input {
-            margin-right: 8px;
-            transform: scale(1.3);
-        }
+        .toggle-filter input { margin-right: 8px; transform: scale(1.3); }
 
-        .order-card p {
-            margin: 5px 0;
-            line-height: 1.5;
-        }
-        .order-card a {
-            color: var(--accent-gold);
-            text-decoration: none;
-        }
+        .order-card p { margin: 5px 0; line-height: 1.5; }
+        .order-card a { color: var(--accent-gold); text-decoration: none; }
         .order-card a:hover { text-decoration: underline; }
 
-        /* Compact View for Paid/Cancelled */
-        .compact-view .order-header {
-             margin-bottom: 5px;
-             align-items: center; /* Center name and status */
-        }
-         .compact-view .order-name {
-             margin-bottom: 0;
-         }
-        .compact-view p {
-            margin: 3px 0;
-            line-height: 1.3;
-            font-size: 0.95em;
-        }
+        .compact-view .order-header { margin-bottom: 5px; align-items: center; }
+        .compact-view .order-name { margin-bottom: 0; }
+        .compact-view p { margin: 3px 0; line-height: 1.3; font-size: 0.95em; }
     </style>
 </head>
 <body>
@@ -210,14 +148,8 @@ $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         <?php foreach ($orders as $order): ?>
             <?php
-                $status = strtolower($order['status'] ?? 'pending'); // Default to pending if null
-                $statusClass = match($status) {
-                    'ready'     => 'status-ready',
-                    'paid'      => 'status-paid',
-                    'cancelled' => 'status-cancelled',
-                    'fulfilled' => 'status-fulfilled',
-                    default     => 'status-pending'
-                };
+                $status = strtolower($order['status'] ?? 'new'); // Default to 'new'
+                $statusClass = 'status-' . $status;
 
                 $itemSummary = [];
                 $flavors = [
@@ -230,13 +162,11 @@ $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         $itemSummary[] = "$label: {$order[$flavor]}";
                     }
                 }
-                if (empty($itemSummary)) {
-                    $itemSummary[] = "No items listed"; // Handle cases with no items
-                }
+                if (empty($itemSummary)) { $itemSummary[] = "No items listed"; }
 
                 $isPaid = $status === 'paid';
                 $isCancelled = $status === 'cancelled';
-                $isFulfilled = $status === 'fulfilled'; // Keep for future/consistency
+                $isFulfilled = $status === 'fulfilled';
                 $canTakeAction = !$isPaid && !$isCancelled && !$isFulfilled;
                 $isCompact = $isPaid || $isCancelled || $isFulfilled;
                 $compactClass = $isCompact ? 'compact-view' : '';
@@ -261,23 +191,28 @@ $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
                  <?php if ($canTakeAction): ?>
                     <div class="button-container">
                         <?php if ($status === 'ready'): ?>
-                            <form method="post">
+                             <form method="post">
                                 <input type="hidden" name="order_id" value="<?= $order['id'] ?>">
                                 <input type="hidden" name="action" value="paid">
                                 <button class="order-toggle paid" type="submit">Mark as Paid</button>
                             </form>
-                        <?php else: // New/Pending ?>
+                             <form method="post">
+                                 <input type="hidden" name="order_id" value="<?= $order['id'] ?>">
+                                 <input type="hidden" name="action" value="cancelled">
+                                 <button class="order-toggle cancel" type="submit">Cancel Order</button>
+                             </form>
+                        <?php else: // New or Pending ?>
                             <form method="post">
                                 <input type="hidden" name="order_id" value="<?= $order['id'] ?>">
                                 <input type="hidden" name="action" value="ready">
                                 <button class="order-toggle ready" type="submit">Mark as Ready</button>
                             </form>
+                             <form method="post">
+                                 <input type="hidden" name="order_id" value="<?= $order['id'] ?>">
+                                 <input type="hidden" name="action" value="cancelled">
+                                 <button class="order-toggle cancel" type="submit">Cancel Order</button>
+                             </form>
                         <?php endif; ?>
-                         <form method="post">
-                             <input type="hidden" name="order_id" value="<?= $order['id'] ?>">
-                             <input type="hidden" name="action" value="cancelled">
-                             <button class="order-toggle cancel" type="submit">Cancel Order</button>
-                         </form>
                     </div>
                 <?php endif; ?>
             </div>
@@ -295,7 +230,7 @@ $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 const showCancelled = showCancelledBox.checked;
 
                 orderCards.forEach(card => {
-                    const isPaid = card.classList.contains('status-paid') || card.classList.contains('status-fulfilled'); // Include fulfilled with paid
+                    const isPaid = card.classList.contains('status-paid') || card.classList.contains('status-fulfilled');
                     const isCancelled = card.classList.contains('status-cancelled');
 
                     if (isPaid) {
@@ -303,17 +238,14 @@ $orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     } else if (isCancelled) {
                         card.style.display = showCancelled ? 'block' : 'none';
                     } else {
-                        card.style.display = 'block'; // Always show others (New/Ready/Pending)
+                        card.style.display = 'block';
                     }
                 });
             }
 
-            // Add event listeners
             showPaidBox.addEventListener('change', filterOrders);
             showCancelledBox.addEventListener('change', filterOrders);
-
-            // Run on page load to set the initial state (hide paid & cancelled)
-            filterOrders();
+            filterOrders(); // Run on load
         });
     </script>
 </body>

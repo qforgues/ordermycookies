@@ -1,123 +1,93 @@
 <?php
-session_start();
-$role = strtolower($_SESSION['role'] ?? '');
-if (!in_array($role, ['0', 'admin'])) {
-    header('Location: admin.html?auth=failed');
-    exit;
-}
+// process_orders.php - Handles NEW Customer Order Submissions
+
+session_start(); // Start session if needed (e.g., for captcha or user tracking)
 
 require_once 'db_connect.php';
 require_once 'send_email.php';
 
-$stmt = $pdo->query("SELECT * FROM cookie_orders ORDER BY order_date DESC");
-$orders = $stmt->fetchAll(PDO::FETCH_ASSOC);
+// --- Check if it's a POST request (Order Submission) ---
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['full_name'], $_POST['email'], $_POST['phone'])) {
 
-function formatPhone($number) {
-    $digits = preg_replace('/\D/', '', $number);
-    return preg_match('/^(\d{3})(\d{3})(\d{4})$/', $digits, $matches) 
-        ? "($matches[1]) $matches[2]-$matches[3]" 
-        : $number;
-}
+    // --- 1. Sanitize and Validate Input ---
+    // (This is basic - consider more robust validation)
+    $fullName = filter_input(INPUT_POST, 'full_name', FILTER_SANITIZE_STRING);
+    $email = filter_input(INPUT_POST, 'email', FILTER_VALIDATE_EMAIL);
+    $phone = filter_input(INPUT_POST, 'phone', FILTER_SANITIZE_STRING);
 
-function getItemSummary($order) {
-    $items = [];
-    if ($order['chocolate_chip_quantity'] > 0) {
-        $items[] = $order['chocolate_chip_quantity'] . ' x Chocolate Chip';
-    }
-    if ($order['peanut_butter_quantity'] > 0) {
-        $items[] = $order['peanut_butter_quantity'] . ' x Peanut Butter';
-    }
-    if ($order['oreomg_quantity'] > 0) {
-        $items[] = $order['oreomg_quantity'] . ' x Ore-OMG';
-    }
-    if ($order['snickerdoodle_quantity'] > 0) {
-        $items[] = $order['snickerdoodle_quantity'] . ' x Snickerdoodle';
-    }
-    if (!empty($order['maplebacon_quantity']) && $order['maplebacon_quantity'] > 0) {
-        $items[] = $order['maplebacon_quantity'] . ' x Maple Bacon';
-    }
-    return implode("\n", $items);
-}
+    $choco_qty = (int)($_POST['chocolate_chip_quantity'] ?? 0);
+    $pb_qty = (int)($_POST['peanut_butter_quantity'] ?? 0);
+    $oreomg_qty = (int)($_POST['oreomg_quantity'] ?? 0);
+    $snick_qty = (int)($_POST['snickerdoodle_quantity'] ?? 0);
+    $maple_qty = (int)($_POST['maplebacon_quantity'] ?? 0);
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['order_id'], $_POST['action'])) {
-    $id = (int) $_POST['order_id'];
-    $action = $_POST['action'];
+    // Ensure quantities are not negative
+    $choco_qty = max(0, $choco_qty);
+    $pb_qty = max(0, $pb_qty);
+    $oreomg_qty = max(0, $oreomg_qty);
+    $snick_qty = max(0, $snick_qty);
+    $maple_qty = max(0, $maple_qty);
 
-    $newStatus = match ($action) {
-        'ready' => 'Ready',
-        'paid' => 'Paid',
-        'cancelled' => 'Cancelled',
-        default => null
-    };
+    $totalAmount = filter_input(INPUT_POST, 'total_amount', FILTER_VALIDATE_FLOAT); // Ensure this is sent from your form
+    $paymentMethod = filter_input(INPUT_POST, 'payment_method', FILTER_SANITIZE_STRING);
+    $deliveryMethod = filter_input(INPUT_POST, 'delivery_method', FILTER_SANITIZE_STRING);
+    $pickupTime = filter_input(INPUT_POST, 'pickup_time', FILTER_SANITIZE_STRING);
 
-    if ($newStatus) {
-        $stmt = $pdo->prepare("UPDATE cookie_orders SET status = ? WHERE id = ?");
-        $stmt->execute([$newStatus, $id]);
-
-        if ($newStatus === 'Ready') {
-            $stmt = $pdo->prepare("SELECT email FROM cookie_orders WHERE id = ?");
-            $stmt->execute([$id]);
-            $email = $stmt->fetchColumn();
-
-            $subject = "Your Courtneys Cookies order is on its way!";
-            $body = '<html><body style="font-family: Quicksand, sans-serif; color: #3E2C1C; background-color: #FFF7ED; padding: 20px;">
-                <div style="max-width:600px;margin:auto;background:#ffffff;border-radius:10px;padding:20px;box-shadow:0 0 10px rgba(0,0,0,0.05);">
-                    <img src="https://i.postimg.cc/VsHp5Dcs/logo.png" style="max-width:150px;margin:auto;display:block;" alt="Courtneys Cookies"/>
-                    <h2 style="color:#6B4423;text-align:center;">Your cookies are on the way! 🍪</h2>
-                    <p style="text-align:center;">Thank you for ordering with us. We hope you LOVE them.</p>
-                    <p style="text-align:center;">Don’t forget to <a href="https://facebook.com/ordermycookies" target="_blank">like and share us on Facebook</a> and tell friends and family about <strong>OrderMyCookies.com</strong>.</p>
-                    <p style="text-align:center;">We’re rolling out fun discounts and cookie surprises soon, so stay tuned!</p>
-                    <p style="text-align:center;">- Courtney</p>
-                </div></body></html>';
-
-            sendCustomerEmail($email, $subject, $body);
-        }
-        header('Location: admin_orders.php');
+    // Basic check - need at least an email, name, and one cookie
+    if (!$email || !$fullName || ($choco_qty + $pb_qty + $oreomg_qty + $snick_qty + $maple_qty) <= 0) {
+        // Redirect back with an error message (adjust your form page name)
+        header('Location: order_form.html?error=invalid_input');
         exit;
     }
+
+    // --- 2. Insert into Database ---
+    $sql = "INSERT INTO cookie_orders (
+                full_name, email, phone,
+                chocolate_chip_quantity, peanut_butter_quantity, oreomg_quantity,
+                snickerdoodle_quantity, maplebacon_quantity,
+                total_amount, payment_method, delivery_method, pickup_time,
+                status, order_date
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'New', NOW())"; // Set status to 'New'
+
+    try {
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([
+            $fullName, $email, $phone,
+            $choco_qty, $pb_qty, $oreomg_qty,
+            $snick_qty, $maple_qty,
+            $totalAmount, $paymentMethod, $deliveryMethod, $pickupTime
+        ]);
+        $orderId = $pdo->lastInsertId(); // Get the ID of the new order
+
+    } catch (PDOException $e) {
+        error_log("Order submission failed: " . $e->getMessage());
+        header('Location: order_form.html?error=db_error');
+        exit;
+    }
+
+    // --- 3. Send "New Order" (Thank You) Email ---
+    if ($email && $orderId) {
+        $subject = "We've Received Your Courtneys Cookies Order! 🍪";
+        $body = '<html><body style="font-family: Quicksand, sans-serif; color: #3E2C1C; background-color: #FFF7ED; padding: 20px;">
+                 <div style="max-width:600px;margin:auto;background:#ffffff;border-radius:10px;padding:20px;box-shadow:0 0 10px rgba(0,0,0,0.05);">
+                     <img src="images/logo.png" style="max-width:150px;margin:auto;display:block;" alt="Courtneys Cookies"/>
+                     <h2 style="color:#6B4423;text-align:center;">Thank you for your order!</h2>
+                     <p style="text-align:center;">We\'ve received your delicious order (ID: ' . htmlspecialchars($orderId) . ') and will start baking soon! We\'ll send another email when it\'s ready. We hope you LOVE them!</p>
+                     <p style="text-align:center;">Don\'t forget to <a href="https://facebook.com/ordermycookies" target="_blank">like and share us on Facebook</a> and tell friends and family about <strong>OrderMyCookies.com</strong>.</p>
+                     <p style="text-align:center;">We\'re rolling out fun discounts and cookie surprises soon, so stay tuned!</p>
+                     <p style="text-align:center;">Sweetest Regards,<br>- Courtney</p>
+                 </div></body></html>';
+
+        sendCustomerEmail($email, $subject, $body);
+    }
+
+    // --- 4. Redirect to a Thank You Page ---
+    header('Location: thank_you.html'); // Create a thank_you.html page!
+    exit;
+
+} else {
+    // If not a valid POST submission, redirect to the order form
+    header('Location: order_form.html'); // Adjust if your form has a different name
+    exit;
 }
 ?>
-
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Admin - Orders</title>
-    <link rel="stylesheet" href="style.css">
-    <style>
-        .order-card { border: 1px solid #ccc; padding: 20px; margin-bottom: 20px; border-radius: 8px; background-color: #fff; }
-        .order-header { font-weight: bold; margin-bottom: 10px; font-size: 1.2em; }
-        .order-items { margin: 10px 0; white-space: pre-wrap; }
-        .order-actions { display: flex; gap: 10px; }
-        .order-actions form { flex: 1; }
-        .order-actions button { width: 100%; padding: 10px; border: none; border-radius: 5px; font-weight: bold; cursor: pointer; }
-        .New { background-color: #e0f7fa; }
-        .Ready { background-color: #fff3cd; }
-        .Paid { background-color: #d4edda; }
-        .Cancelled { background-color: #f8d7da; }
-    </style>
-</head>
-<body>
-<div class="container">
-    <h1>Order Management</h1>
-    <?php foreach ($orders as $order): ?>
-        <div class="order-card <?= $order['status'] ?>">
-            <div class="order-header"> <?= htmlspecialchars($order['full_name']) ?> </div>
-            <div><strong>Email:</strong> <a href="mailto:<?= htmlspecialchars($order['email']) ?>"><?= htmlspecialchars($order['email']) ?></a></div>
-            <div><strong>Phone:</strong> <a href="tel:<?= htmlspecialchars($order['phone']) ?>"><?= formatPhone($order['phone']) ?></a></div>
-            <div class="order-items"><strong>Items:</strong> <?= nl2br(htmlspecialchars(getItemSummary($order))) ?></div>
-            <?php if ($order['status'] !== 'Paid'): ?>
-                <div class="order-actions">
-                    <?php if ($order['status'] === 'New'): ?>
-                        <form method="post"><input type="hidden" name="order_id" value="<?= $order['id'] ?>"><input type="hidden" name="action" value="ready"><button style="background-color:#FFD580;">Ready</button></form>
-                        <form method="post"><input type="hidden" name="order_id" value="<?= $order['id'] ?>"><input type="hidden" name="action" value="cancelled"><button style="background-color:#f8d7da;">Cancelled</button></form>
-                    <?php elseif ($order['status'] === 'Ready'): ?>
-                        <form method="post"><input type="hidden" name="order_id" value="<?= $order['id'] ?>"><input type="hidden" name="action" value="paid"><button style="background-color:#d4edda;">Paid</button></form>
-                        <form method="post"><input type="hidden" name="order_id" value="<?= $order['id'] ?>"><input type="hidden" name="action" value="cancelled"><button style="background-color:#f8d7da;">Cancelled</button></form>
-                    <?php endif; ?>
-                </div>
-            <?php endif; ?>
-        </div>
-    <?php endforeach; ?>
-</div>
-</body>
-</html>
