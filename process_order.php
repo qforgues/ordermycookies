@@ -51,15 +51,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['full_name'], $_POST['
 
             if ($success && $orderId) {
                 $subject = "We've Received Your Courtneys Cookies Order! 🍪";
-                $body = '<html><body style="font-family: Quicksand, sans-serif; color: #3E2C1C; background-color: #FFF7ED; padding: 20px;">
-                         <div style="max-width:600px;margin:auto;background:#ffffff;border-radius:10px;padding:20px;box-shadow:0 0 10px rgba(0,0,0,0.05);">
-                             <img src="images/logo.png" style="max-width:150px;margin:auto;display:block;" alt="Courtneys Cookies"/>
-                             <h2 style="color:#6B4423;text-align:center;">Thank you for your order!</h2>
-                             <p style="text-align:center;">We\'ve received your delicious order (ID: ' . htmlspecialchars($orderId) . ') and will start baking soon! We\'ll send another email when it\'s ready. We hope you LOVE them!</p>
-                             <p style="text-align:center;">Don\'t forget to <a href="https://facebook.com/ordermycookies" target="_blank">like and share us on Facebook</a> and tell friends and family about <strong>OrderMyCookies.com</strong>.</p>
-                             <p style="text-align:center;">We\'re rolling out fun discounts and cookie surprises soon, so stay tuned!</p>
-                             <p style="text-align:center;">Sweetest Regards,<br>- Courtney</p>
-                         </div></body></html>';
+                $body = '
+                    <html>
+                    <body style="font-family: Quicksand, sans-serif; color: #3E2C1C; background-color: #FFF7ED; padding: 20px;">
+                        <div style="max-width:600px;margin:auto;background:#ffffff;border-radius:10px;padding:20px;box-shadow:0 0 10px rgba(0,0,0,0.05);">
+                        <img src="https://ordermycookies.com/images/logo.png" style="max-width:150px;margin:auto;display:block;" alt="Courtneys Cookies"/>
+                        <h2 style="color:#6B4423;text-align:center;">Thank you for your order!</h2>
+                        <p style="text-align:center;">We\'ve received your delicious order (ID: ' . htmlspecialchars($orderId) . ') and will start baking soon! We\'ll send another email when it\'s ready. We hope you LOVE them!</p>
+                        <p style="text-align:center;">
+                            Don\'t forget to <a href="https://facebook.com/ordermycookies" target="_blank" style="color:#6B4423;font-weight:bold;">like and share us on Facebook</a>
+                            and tell friends and family about <strong>OrderMyCookies.com</strong>.
+                        </p>
+                        <p style="text-align:center;">We\'re rolling out fun discounts and cookie surprises soon, so stay tuned!</p>
+                        <p style="text-align:center;">Sweetest Regards,<br>- Courtney</p>
+                        </div>
+                    </body>
+                    </html>';
 
                 $emailSent = sendCustomerEmail($email, $subject, $body);
 
