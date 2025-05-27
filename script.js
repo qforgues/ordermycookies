@@ -35,8 +35,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 paymentMessages = {
                     'Cash': settings.settings.cash_payment_message,
                     'CreditCard': settings.settings.creditcard_payment_message,
-                    'Venmo': settings.settings.venmo_payment_message
-                    // Removed ATHMovil
+                    'Venmo': settings.settings.venmo_payment_message,
+                    'ATH Movil': settings.settings.athmovil_payment_message
                 };
                 calculateTotal(); // Recalculate total after settings load
             } else {
@@ -47,7 +47,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 paymentMessages = {
                     'Cash': 'Please have exact cash ready for pickup/delivery.',
                     'CreditCard': 'You will be sent a secure payment link via email/text shortly.',
-                    'Venmo': '@CourtneysCookies'
+                    'Venmo': '@CourtneysCookies',
+                    'ATH Movil': 'Please send payment to @CourtneysCookies on ATH Movil.1'
                 };
             }
         } catch (error) {
@@ -58,7 +59,8 @@ document.addEventListener('DOMContentLoaded', () => {
             paymentMessages = {
                 'Cash': 'Please have exact cash ready for pickup/delivery.',
                 'CreditCard': 'You will be sent a secure payment link via email/text shortly.',
-                'Venmo': '@CourtneysCookies'
+                'Venmo': '@CourtneysCookies',
+                'ATH Movil': 'Please send payment to @CourtneysCookies on ATH Movil.2'
             };
         }
     };
@@ -166,7 +168,7 @@ document.addEventListener('DOMContentLoaded', () => {
         formData.append('selectedPaymentMethod', selectedPaymentMethod);
         formData.append('paymentMessage', paymentMessage); // Pass the message to the backend
 
-        // For all payment methods (Cash, Credit Card, Venmo), proceed directly with form submission
+        // For all payment methods (Cash, Credit Card, Venmo, ATH Movil), proceed directly with form submission
         try {
             const response = await fetch('process_order.php', {
                 method: 'POST',
