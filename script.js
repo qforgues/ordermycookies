@@ -160,11 +160,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 alertMessage.classList.add('success');
                 // Use the message and data coming back from PHP
                 alertMessage.innerHTML = `Order placed successfully! (ID: ${result.orderId}).<br>Total: ${result.totalAmount}.<br><strong>${result.paymentMessage}</strong>`;
+                // Save the payment method before reset
+                const lastPaymentMethod = paymentMethodSelect.value;
                 orderForm.reset();
                 quantityInputs.forEach(input => {
                     input.value = 0;
                     document.getElementById(input.dataset.product + '_quantity').value = 0;
                 });
+                // Restore the payment method and update the message
+                paymentMethodSelect.value = lastPaymentMethod;
                 calculateTotal();
                 updatePaymentMessage(); // Reset payment message display
             } else {
