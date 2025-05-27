@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const deliveryMethodRadios = document.querySelectorAll('input[name="deliveryMethod"]');
     const paymentMethodSelect = document.getElementById('paymentMethod');
     const deliveryFeeDisplay = document.getElementById('deliveryFeeDisplay');
+    const addressSection = document.getElementById('addressSection');
 
     const cookiePrices = {
         'chocochip': { single: 6, pair: 10 },
@@ -115,10 +116,24 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    // Function to toggle address section visibility
+    function toggleAddressSection() {
+        const selectedDeliveryMethod = document.querySelector('input[name="deliveryMethod"]:checked').value;
+        if (selectedDeliveryMethod === 'delivery') {
+            addressSection.style.display = '';
+        } else {
+            addressSection.style.display = 'none';
+        }
+    }
+
+    // Initial toggle on page load
+    toggleAddressSection();
+
     // Event listener for delivery method change
     deliveryMethodRadios.forEach(radio => {
         radio.addEventListener('change', () => {
             calculateTotal();
+            toggleAddressSection();
         });
     });
 

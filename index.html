@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Courtney's Cookies - OrderMyCookies.com</title>
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Quicksand:wght@400;700&family=Pacifico&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Arvo:wght@700&display=swap" rel="stylesheet">
     <link rel="icon" type="image/x-icon" href="images/favicon.ico">
 
     <link rel="icon" type="image/png" sizes="16x16" href="images/favicon-16x16.png">
@@ -21,9 +21,9 @@
 <body>
     <div class="container">
         <img src="https://ordermycookies.com/images/logo.png" alt="Courtney's Cookies" class="logo" />
-        <h1>Order Now! Pickup / Delivery</h1>
-        <p class="subtitle">You’re one bite away from your NEW FAVORITE cookie!</p>
+        <h1>Order Now! Pickup &amp; Delivery</h1>
 
+        <!-- COOKIES -->
         <div class="product-section">
             <div class="product-card" data-product="chocochip">
                 <img src="https://i.postimg.cc/7hkFpBD4/chocochip.jpg" alt="Chocolate Chip Cookie">
@@ -65,8 +65,19 @@
                     <button class="increase-quantity" data-product="peanutbutter">+</button>
                 </div>
             </div>
+            <div class="product-card" data-product="maplebacon">
+                <img src="https://ordermycookies.com/images/maplebacon.jpeg" alt="Peanut Butter Cookie">
+                <h2>Peanut Butter</h2>
+                <div class="price">$6 each / 2 for $10</div>
+                <div class="quantity-control">
+                    <button class="decrease-quantity" data-product="maplebacon">-</button>
+                    <input type="number" class="quantity-input" data-product="maplebacon" value="0" min="0">
+                    <button class="increase-quantity" data-product="maplebacon">+</button>
+                </div>
+            </div>
         </div>
 
+        <!-- ORDER FORM -->
         <form id="orderForm" class="order-form">
             <h2>Your Order Details</h2>
 
@@ -86,28 +97,6 @@
                 </div>
             </div>
 
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="street">Street Address:</label>
-                    <input type="text" id="street" name="street" required>
-                </div>
-                <div class="form-group">
-                    <label for="city">City:</label>
-                    <input type="text" id="city" name="city" required>
-                </div>
-            </div>
-
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="state">State:</label>
-                    <input type="text" id="state" name="state" required>
-                </div>
-                <div class="form-group">
-                    <label for="zip">ZIP Code:</label>
-                    <input type="text" id="zip" name="zip" required>
-                </div>
-            </div>
-
             <div class="form-group">
                 <label>Delivery or Pickup?</label>
                 <div class="form-row">
@@ -115,6 +104,29 @@
                     <label><input type="radio" name="deliveryMethod" value="delivery"> Delivery [Vieques Only] <span id="deliveryFeeDisplay"> (+$2)</span></label>
                 </div>
             </div>
+
+            <div class="form-row" id="addressSection">
+                <div class="form-group">
+                    <label for="street">Address/Pin 📍:</label>
+                    <input type="text" id="street" name="street" required>
+                </div>
+                <div class="form-group">
+                    <label for="city">Barrio:</label>
+                    <input type="text" id="city" name="city" required>
+                </div>
+            </div>
+
+            <div class="form-row" style="display: none;" id="deliveryAddress">
+                <div class="form-group">
+                    <label for="state">State:</label>
+                    <input type="text" id="state" name="state" value="PR" required>
+                </div>
+                <div class="form-group">
+                    <label for="zip">ZIP Code:</label>
+                    <input type="text" id="zip" name="zip" value="Vieques" required>
+                </div>
+            </div>
+
 
             <div class="form-group">
                 <label for="paymentMethod">Payment Method:</label>
