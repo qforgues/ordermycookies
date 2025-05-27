@@ -51,14 +51,7 @@ $totalAmountFloat = filter_var($_POST['total_amount'], FILTER_VALIDATE_FLOAT);
 $totalAmountString = '$' . number_format($totalAmountFloat, 2); // Use this for display/email
 
 $paymentMethod = htmlspecialchars($_POST['payment_method']);
-
-// --- Define Payment Messages (as JS no longer sends it) ---
-$paymentMessages = [
-    'Cash' => 'Please have exact cash ready for pickup/delivery.',
-    'CreditCard' => 'You will be sent a secure payment link via email/text shortly.',
-    'Venmo' => 'Please send payment to @CourtneysCookies (Confirm name before sending!)'
-];
-$paymentMessage = $paymentMessages[$paymentMethod] ?? 'Payment details will be confirmed.';
+$paymentMessage = htmlspecialchars($_POST['paymentMessageDisplay']);
 
 if (empty($email)) {
     $response['message'] = "Invalid Email Address.";
@@ -115,9 +108,9 @@ if ($dbSuccess) {
 
     // 2. Send to Customer
     $host = $_SERVER['HTTP_HOST'] ?? 'dev.ordermycookies.com';
-    $logoUrl = "http://" . $host . "/images/logo.png";
+    $logoUrl = "http://" . $host . "http://ordermycookies.com/images/logo.png";
     $subjectCustomer = "We've Received Your Courtneys Cookies Order! 🍪";
-    $bodyCustomer = '<html><body style="font-family: Quicksand, sans-serif; color: #3E2C1C; background-color: #FFF7ED; padding: 20px;"><div style="max-width:600px;margin:auto;background:#ffffff;border-radius:10px;padding:20px;box-shadow:0 0 10px rgba(0,0,0,0.05);"><img src="' . $logoUrl . '" style="max-width:150px;margin:auto;display:block;" alt="Courtneys Cookies"/><h2 style="color:#6B4423;text-align:center;">Thank you for your order!</h2><p style="text-align:center;">We\'ve received your delicious order (ID: ' . htmlspecialchars($orderId) . ') and will start baking soon! We\'ll send another email when it\'s ready. We hope you LOVE them!</p><p style="text-align:center;">Don\'t forget to <a href="https://facebook.com/ordermycookies" target="_blank">like and share us on Facebook</a> and tell friends and family about <strong>OrderMyCookies.com</strong>.</p><p style="text-align:center;">We\'re rolling out fun discounts and cookie surprises soon, so stay tuned!</p><p style="text-align:center;">Sweetest Regards,<br>- Courtney</p></div></body></html>';
+    $bodyCustomer = '<html><body style="font-family: Quicksand, sans-serif; color: #3E2C1C; background-color: #FFF7ED; padding: 20px;"><div style="max-width:600px;margin:auto;background:#ffffff;border-radius:10px;padding:20px;box-shadow:0 0 10px rgba(0,0,0,0.05);"><img src="' . $logoUrl . '" style="max-width:150px;margin:auto;display:block;" alt="Courtneys Cookies"/><h2 style="color:#6B4423;text-align:center;">Thank you for your order!</h2><p style="text-align:center;">We\'ve received your delicious order and will start baking soon! We\'ll send another email when it\'s ready. We hope you LOVE them!</p><p style="text-align:center;">Don\'t forget to <a href="https://facebook.com/ordermycookies" target="_blank">like and share us on Facebook</a> and tell friends and family about <strong>OrderMyCookies.com</strong>.</p><p style="text-align:center;">We\'re rolling out fun discounts and cookie surprises soon, so stay tuned!</p><p style="text-align:center;">Sweetest Regards,<br>- Courtney</p><p>'.$paymentMessage.'</p></div></body></html>';
     $customerMailSuccess = @sendCustomerEmail($email, $subjectCustomer, $bodyCustomer);
 }
 
