@@ -105,20 +105,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: formData
             });
 
-            // --- DEBUGGING CHANGE: Get response as text first ---
             const responseText = await response.text();
-            console.log("Server Response Text:", responseText); // already present
-            document.body.innerHTML += `<pre style="color:red;">${responseText}</pre>`; // temporarily add to page
-
-            // --- END DEBUGGING CHANGE ---
+            console.log("Server Response Text:", responseText);
 
             let result;
             try {
-                 result = JSON.parse(responseText); // Try to parse the text
+                result = JSON.parse(responseText);
             } catch (jsonError) {
                 console.error('JSON Parsing Error:', jsonError);
-                // Show the raw text if JSON parsing fails
-                throw new Error(`Server sent an invalid response. See console (F12) for "Server Response Text". It likely contains a PHP error.`);
+                throw new Error(`Server sent invalid JSON. Check PHP output.`);
             }
 
             if (response.ok && result.success) {
