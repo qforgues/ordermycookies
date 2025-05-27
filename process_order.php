@@ -2,9 +2,18 @@
 header('Content-Type: application/json');
 require_once 'db_connect.php'; // Include your database connection
 
-$to = "courtney.forgues@gmail.com";
-$fromEmail = "orders@courtneyscookies.com";
-$fromName = "Courtney's Caribbean Cookies";
+$to = getenv('DEPLOY_ENV');
+if (!$to) {
+    $hostname = $_SERVER['HTTP_HOST'] ?? 'localhost';
+    if (str_contains($hostname, 'dev.') || str_contains($hostname, 'localhost')) {
+        $to = 'quentin.forgues@gmail.com';
+    } else {
+        $to = 'courtney.forgues@gmail.com';
+    }
+}
+
+$fromEmail = "courtney@ordermycoookies.com";
+$fromName = "Courtney's Cookies";
 
 $required = ['fullName', 'email', 'phone', 'street', 'city', 'state', 'zip', 'selectedPaymentMethod']; // Added selectedPaymentMethod
 foreach ($required as $field) {
