@@ -36,7 +36,7 @@ function getItemSummary($order) {
     if (!empty($order['maplebacon_quantity']) && $order['maplebacon_quantity'] > 0) {
         $items[] = $order['maplebacon_quantity'] . ' x Maple Bacon';
     }
-    return implode(", ", $items);
+    return implode("\n", $items);
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['order_id'], $_POST['action'])) {
@@ -86,30 +86,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['order_id'], $_POST['a
     <div class="container">
         <h1>All Orders</h1>
         <?php foreach ($orders as $order): ?>
-            <div class="order-card <?= $order['status'] ?>">
-                <p><strong>Name:</strong> <?= htmlspecialchars($order['full_name']) ?></p>
-                <p><strong>Phone:</strong> <a href="tel:<?= htmlspecialchars($order['phone']) ?>"><?= formatPhone($order['phone']) ?></a></p>
-                <p><strong>Email:</strong> <a href="mailto:<?= htmlspecialchars($order['email']) ?>"><?= htmlspecialchars($order['email']) ?></a></p>
-                <p><strong>Address:</strong> <?= htmlspecialchars($order['street']) ?>, <?= htmlspecialchars($order['city']) ?>, <?= htmlspecialchars($order['state']) ?> <?= htmlspecialchars($order['zip']) ?></p>
-                <p><strong>Delivery Method:</strong> <?= htmlspecialchars($order['delivery_method']) ?> | <strong>Payment:</strong> <?= htmlspecialchars($order['payment_method']) ?></p>
-                <p><strong>Pickup Time:</strong> <?= htmlspecialchars($order['pickup_time']) ?></p>
-                <p><strong>Items:</strong> <?= htmlspecialchars(getItemSummary($order)) ?></p>
-                <p><strong>Total:</strong> $<?= htmlspecialchars($order['total_amount']) ?> + $<?= htmlspecialchars($order['delivery_fee']) ?> delivery</p>
-
-                <?php if ($order['status'] !== 'Paid'): ?>
-                    <form method="post" style="display:inline-block;">
-                        <input type="hidden" name="order_id" value="<?= $order['id'] ?>">
-                        <input type="hidden" name="action" value="<?= $order['status'] === 'New' ? 'ready' : 'paid' ?>">
-                        <button><?= $order['status'] === 'New' ? 'Mark Ready' : 'Mark Paid' ?></button>
-                    </form>
-                    <form method="post" style="display:inline-block;">
-                        <input type="hidden" name="order_id" value="<?= $order['id'] ?>">
-                        <input type="hidden" name="action" value="cancelled">
-                        <button>Cancel</button>
-                    </form>
-                <?php endif; ?>
-
-                <hr>
+            <div style="margin-bottom: 40px; padding: 20px; border: 1px solid #ccc; border-radius: 10px; background: #fff;">
+                <div style="font-size: 1.2em; font-weight: bold; margin-bottom: 10px;">
+                    <?= htmlspecialchars($order['full_name']) ?>
+                </div>
+                <div><strong>Phone:</strong> <a href="tel:<?= htmlspecialchars($order['phone']) ?>"><?= formatPhone($order['phone']) ?></a></div>
+                <div><strong>Email:</strong> <a href="mailto:<?= htmlspecialchars($order['email']) ?>"><?= htmlspecialchars($order['email']) ?></a></div>
+                <div><strong>Address:</strong> <?= htmlspecialchars($order['street']) ?>, <?= htmlspecialchars($order['city']) ?>, <?= htmlspecialchars($order['state']) ?> <?= htmlspecialchars($order['zip']) ?></div>
+                <div><strong>Delivery Method:</strong> <?= htmlspecialchars($order['delivery_method']) ?></div>
+                <div><strong>Payment:</strong> <?= htmlspecialchars($order['payment_method']) ?></div>
+                <div><strong>Preferred Time:</strong> <?= htmlspecialchars($order['pickup_time']) ?></div>
+                <div><strong>Items:</strong><br><?= nl2br(htmlspecialchars(getItemSummary($order))) ?></div>
+                <div><strong>Total:</strong> $<?= htmlspecialchars($order['total_amount']) ?> ( + $<?= htmlspecialchars($order['delivery_fee']) ?> delivery fee )</div>
+                <div style="margin-top: 10px;">
+                    <?php if ($order['status'] === 'New'): ?>
+                        <form method="post" style="display: inline-block;">
+                            <input type="hidden" name="order_id" value="<?= $order['id'] ?>">
+                            <input type="hidden" name="action" value="ready">
+                            <button>Mark Ready</button>
+                        </form>
+                        <form method="post" style="display: inline-block;">
+                            <input type="hidden" name="order_id" value="<?= $order['id'] ?>">
+                            <input type="hidden" name="action" value="cancelled">
+                            <button>Cancel</button>
+                        </form>
+                    <?php elseif ($order['status'] === 'Ready'): ?>
+                        <form method="post" style="display: inline-block;">
+                            <input type="hidden" name="order_id" value="<?= $order['id'] ?>">
+                            <input type="hidden" name="action" value="paid">
+                            <button>Mark Paid</button>
+                        </form>
+                        <form method="post" style="display: inline-block;">
+                            <input type="hidden" name="order_id" value="<?= $order['id'] ?>">
+                            <input type="hidden" name="action" value="cancelled">
+                            <button>Cancel</button>
+                        </form>
+                    <?php elseif ($order['status'] === 'Paid'): ?>
+                        <span style="color: green; font-weight: bold;">PAID</span>
+                    <?php elseif ($order['status'] === 'Cancelled'): ?>
+                        <span style="color: red; font-weight: bold;">CANCELLED</span>
+                    <?php endif; ?>
+                </div>
             </div>
         <?php endforeach; ?>
     </div>
