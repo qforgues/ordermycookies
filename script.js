@@ -18,14 +18,55 @@ document.addEventListener('DOMContentLoaded', () => {
         'peanut_butter': { single: 6, pair: 10 }
     };
 
-    let currentDeliveryFee = 2.00;
-    deliveryFeeDisplay.textContent = ` (+$${currentDeliveryFee.toFixed(2)})`;
-
-    const paymentMessages = {
-        'Cash': 'Please have exact cash ready for pickup/delivery.',
-        'CreditCard': 'You will be sent a secure payment link via email/text shortly.',
-        'Venmo': 'Please send payment to @CourtneysCookies (Confirm name before sending!)'
+    // --- Defaults / Placeholders ---
+    let currentDeliveryFee = 2.00; // Default until loaded
+    let paymentMessages = {
+        'Cash': 'Loading payment info...',
+        'CreditCard': 'Loading payment info...',
+        'Venmo': 'Loading payment info...'
     };
+
+    // --- Function to fetch settings from the server ---
+    const fetchSettings = async () => {
+        try {
+            const response = await fetch('get_settings.php'); // Call your settings script
+            if (!response.ok) {
+                throw new Error(`Server returned status ${response.status}`);
+            }
+            const data = await response.json();
+
+            if (data.success && data.settings) {
+                console.log("Settings loaded:", data.settings);
+                // Use loaded settings or keep default if a specific setting is missing
+                currentDeliveryFee = parseFloat(data.settings.delivery_fee_amount) || 2.00;
+                paymentMessages = {
+                    'Cash': data.settings.cash_payment_message || 'Please have exact cash ready.',
+                    'CreditCard': data.settings.creditcard_payment_message || 'Payment link will be sent.',
+                    'Venmo': data.settings.venmo_payment_message || 'Venmo @CourtneysCookies.'
+                };
+            } else {
+                 throw new Error(data.message || "Failed to load settings (invalid format).");
+            }
+        } catch (error) {
+            console.error('Error fetching settings:', error);
+            // Use hardcoded defaults on any fetch error
+            currentDeliveryFee = 2.00;
+            paymentMessages = {
+                'Cash': 'Please have exact cash ready (default).',
+                'CreditCard': 'Payment link will be sent (default).',
+                'Venmo': 'Venmo @CourtneysCookies (default).'
+            };
+            // Optionally show a non-blocking message
+            // alertMessage.textContent = 'Could not load custom payment messages.';
+            // alertMessage.classList.add('show', 'error');
+        } finally {
+             // Always update display and total after trying to fetch
+             deliveryFeeDisplay.textContent = ` (+$${currentDeliveryFee.toFixed(2)})`;
+             updatePaymentMessage();
+             calculateTotal();
+        }
+    };
+
 
     const updatePaymentMessage = () => {
         const selectedMethod = paymentMethodSelect.value;
@@ -37,8 +78,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let cookieCount = 0;
 
         quantityInputs.forEach(input => {
-            const quantity = parseInt(input.value, 10);
-            cookieCount += quantity;
+            cookieCount += parseInt(input.value, 10);
         });
 
         const price = cookiePrices['chocolate_chip'];
@@ -79,7 +119,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     orderForm.addEventListener('submit', async (event) => {
         event.preventDefault();
-
         alertMessage.classList.remove('show', 'success', 'error', 'info');
         alertMessage.textContent = '';
 
@@ -119,16 +158,15 @@ document.addEventListener('DOMContentLoaded', () => {
             if (response.ok && result.success) {
                 alertMessage.classList.remove('info', 'error');
                 alertMessage.classList.add('success');
-                // --- THIS IS THE UPDATED LINE ---
+                // Use the message and data coming back from PHP
                 alertMessage.innerHTML = `Order placed successfully! (ID: ${result.orderId}).<br>Total: ${result.totalAmount}.<br><strong>${result.paymentMessage}</strong>`;
-                // --- END UPDATED LINE ---
                 orderForm.reset();
                 quantityInputs.forEach(input => {
                     input.value = 0;
                     document.getElementById(input.dataset.product + '_quantity').value = 0;
                 });
                 calculateTotal();
-                updatePaymentMessage();
+                updatePaymentMessage(); // Reset payment message display
             } else {
                 throw new Error(result.message || `Server responded with status ${response.status}`);
             }
@@ -141,6 +179,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    calculateTotal();
-    updatePaymentMessage();
+    // --- Initial load: Fetch settings, which will then call update/calculate ---
+    fetchSettings();
 });
