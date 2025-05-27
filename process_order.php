@@ -12,7 +12,7 @@ if (!$to) {
     }
 }
 
-$fromEmail = "courtney@ordermycoookies.com";
+$fromEmail = "courtney@ordermycookies.com";
 $fromName = "Courtney's Cookies";
 
 $required = ['fullName', 'email', 'phone', 'street', 'city', 'state', 'zip', 'selectedPaymentMethod']; // Added selectedPaymentMethod
