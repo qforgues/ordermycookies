@@ -29,7 +29,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const settings = await response.json();
 
             if (settings.success) {
-                currentDeliveryFee = parseFloat(settings.settings.delivery_fee_amount) || 0; // Access .settings.
+                let deliveryFeeRaw = settings.settings.delivery_fee_amount;
+                if (typeof deliveryFeeRaw === 'string') {
+                    deliveryFeeRaw = deliveryFeeRaw.replace(/[^0-9.]/g, ''); // Remove non-numeric except dot
+                }
+                currentDeliveryFee = parseFloat(deliveryFeeRaw);
+                if (isNaN(currentDeliveryFee)) currentDeliveryFee = 0;
                 deliveryFeeDisplay.textContent = ` (+$${currentDeliveryFee.toFixed(2)})`;
 
                 paymentMessages = {
