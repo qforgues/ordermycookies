@@ -162,16 +162,13 @@ $headers = "From: $fromName <$fromEmail>\r\n";
 $headers .= "Reply-To: $email\r\n";
 $headers .= "Content-Type: text/plain; charset=UTF-8";
 
-$message = "New Cookie Order! (ID: $orderId)\n\n"; // Added Order ID
 $message .= "Name: $fullName\nEmail: $email\nPhone: $phone\n\n";
 $message .= "Address:\n$street\n$city, $state $zip\n\n";
 $message .= "Delivery Method: " . ucfirst($deliveryMethod) . "\n";
 $message .= "Preferred Time: " . ($pickupTime ?: 'N/A') . "\n";
 $message .= "Delivery Fee: $" . number_format($actualDeliveryFee, 2) . "\n\n";
 $message .= "Payment Method: " . $selectedPaymentMethod . "\n";
-if (!empty($paymentMessage)) {
-    $message .= "Payment Instructions: " . $paymentMessage . "\n\n";
-}
+
 $message .= "Order Details:\n";
 if ($chocochipQuantity > 0) $message .= "Chocolate Chip: $chocochipQuantity\n";
 if ($oreomgQuantity > 0) $message .= "Ore-OMG: $oreomgQuantity\n";

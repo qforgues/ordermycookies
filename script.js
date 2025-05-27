@@ -156,9 +156,9 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         // Append calculated total amount
-        formData.append('totalAmount', orderTotalSpan.textContent);
+        formData.append('totalAmount', orderTotalSpan.textContent.replace('$', ''));
         // Append current delivery fee (as a number)
-        formData.append('actualDeliveryFee', document.querySelector('input[name="deliveryMethod"]:checked').value === 'delivery' ? currentDeliveryFee : 0);
+        formData.append('actualDeliveryFee', (document.querySelector('input[name="deliveryMethod"]:checked').value === 'delivery' ? currentDeliveryFee : 0).toString());
 
         // Get selected payment method and its message
         const selectedPaymentMethod = paymentMethodSelect.value;
