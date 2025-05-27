@@ -48,7 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     'Cash': 'Please have exact cash ready for pickup/delivery.',
                     'CreditCard': 'You will be sent a secure payment link via email/text shortly.',
                     'Venmo': '@CourtneysCookies',
-                    'ATH Movil': 'Please send payment to @CourtneysCookies on ATH Movil.1'
+                    'ATH Movil': 'Please send payment (818) 261-1648 Courtney Forgues'
                 };
             }
         } catch (error) {
@@ -60,7 +60,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 'Cash': 'Please have exact cash ready for pickup/delivery.',
                 'CreditCard': 'You will be sent a secure payment link via email/text shortly.',
                 'Venmo': '@CourtneysCookies',
-                'ATH Movil': 'Please send payment to @CourtneysCookies on ATH Movil.2'
+                'ATH Movil': 'Please send payment (818) 261-1648 Courtney Forgues'
             };
         }
     };
