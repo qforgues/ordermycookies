@@ -14,7 +14,7 @@ $owner_email = "courtney.forgues@gmail.com";
 $fromEmail = "courtney@courtneyscookies.com";
 $fromName = "Courtney's Cookies";
 
-$required = ['full_name', 'email', 'phone', 'street', 'city', 'state', 'zip', 'selectedPaymentMethod']; // Added selectedPaymentMethod
+$required = ['full_name', 'email', 'phone', 'street', 'city', 'state', 'zip', 'payment_method']; // Added selectedPaymentMethod
 foreach ($required as $field) {
     if (empty($_POST[$field])) {
         echo json_encode(['success' => false, 'message' => "Missing required field: $field"]);
@@ -41,7 +41,7 @@ $peanutbutterQuantity = (int)($_POST['peanutbutterQuantity'] ?? 0);
 $maplebaconQuantity = (int)($_POST['maplebaconQuantity'] ?? 0);
 $totalAmount = htmlspecialchars($_POST['totalAmount'] ?? '$0.00'); // Keep as string "$XX.XX" for email
 
-$selectedPaymentMethod = htmlspecialchars($_POST['selectedPaymentMethod']);
+$selectedPaymentMethod = htmlspecialchars($_POST['payment_method']);
 $paymentMessage = htmlspecialchars($_POST['paymentMessage']);
 
 $dbSuccess = false;
