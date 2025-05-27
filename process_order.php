@@ -79,6 +79,7 @@ $headers = "From: $fromName <$fromEmail>\r\n";
 $headers .= "Reply-To: $email\r\n";
 $headers .= "Content-Type: text/plain; charset=UTF-8";
 
+$message = "New Cookie Order! (ID: $orderId)\n\n";
 $message .= "Name: $fullName\nEmail: $email\nPhone: $phone\n\n";
 $message .= "Address:\n$street - $city, $zip\n\n";
 $message .= "Delivery Method: " . ucfirst($deliveryMethod) . "\n";
