@@ -167,7 +167,7 @@ $message .= "Address:\n$street\n$city, $state $zip\n\n";
 $message .= "Delivery Method: " . ucfirst($deliveryMethod) . "\n";
 $message .= "Preferred Time: " . ($pickupTime ?: 'N/A') . "\n";
 $message .= "Delivery Fee: $" . number_format($actualDeliveryFee, 2) . "\n\n";
-$message .= "Payment Method: " . $selectedPaymentMethod . "\n";
+$message .= "Payment Method: " . $selectedPaymentMethod . "\n\n";
 
 $message .= "Order Details:\n";
 if ($chocochipQuantity > 0) $message .= "Chocolate Chip: $chocochipQuantity\n";
