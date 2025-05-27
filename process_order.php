@@ -14,7 +14,7 @@ $owner_email = "courtney.forgues@gmail.com";
 $fromEmail = "courtney@courtneyscookies.com";
 $fromName = "Courtney's Cookies";
 
-$required = ['fullName', 'email', 'phone', 'street', 'city', 'state', 'zip', 'selectedPaymentMethod']; // Added selectedPaymentMethod
+$required = ['full_name', 'email', 'phone', 'street', 'city', 'state', 'zip', 'selectedPaymentMethod']; // Added selectedPaymentMethod
 foreach ($required as $field) {
     if (empty($_POST[$field])) {
         echo json_encode(['success' => false, 'message' => "Missing required field: $field"]);
@@ -22,7 +22,7 @@ foreach ($required as $field) {
     }
 }
 
-$fullName = htmlspecialchars($_POST['fullName']);
+$fullName = htmlspecialchars($_POST['full_name']);
 $email = htmlspecialchars($_POST['email']);
 $phone = htmlspecialchars($_POST['phone']);
 $street = htmlspecialchars($_POST['street']);
@@ -47,7 +47,7 @@ $paymentMessage = htmlspecialchars($_POST['paymentMessage']);
 $dbSuccess = false;
 try {
     $stmt = $pdo->prepare("INSERT INTO cookie_orders (
-        fullName,
+        full_name,
         email,
         phone,
         street,
