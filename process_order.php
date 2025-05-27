@@ -1,10 +1,7 @@
 <?php
 // process_order.php - Handles NEW Customer Order Submissions & Returns JSON
-
 ob_start(); // Capture unexpected output
 session_start();
-
-file_put_contents('last_post_debug.log', print_r($_POST, true)); // Log POST for debug
 
 header('Content-Type: application/json');
 
@@ -90,7 +87,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['full_name'], $_POST['
 ob_clean(); // clear anything accidentally printed
 echo json_encode($response);
 
-file_put_contents('php_output_buffer.log', ob_get_contents()); // optional debug log
 ob_end_flush(); // now flush the buffer cleanly
 exit;
 ?>
