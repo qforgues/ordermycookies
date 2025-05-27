@@ -22,6 +22,48 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentDeliveryFee = 0;
     let paymentMessages = {};
 
+    // Function to fetch settings from the server
+    const fetchSettings = async () => {
+        try {
+            const response = await fetch('get_settings.php');
+            const settings = await response.json();
+
+            if (settings.success) {
+                currentDeliveryFee = parseFloat(settings.settings.delivery_fee_amount) || 0; // Access .settings.
+                deliveryFeeDisplay.textContent = ` (+$${currentDeliveryFee.toFixed(2)})`;
+
+                paymentMessages = {
+                    'Cash': settings.settings.cash_payment_message,
+                    'CreditCard': settings.settings.creditcard_payment_message,
+                    'Venmo': settings.settings.venmo_payment_message,
+                    'ATH Movil': settings.settings.athmovil_payment_message
+                };
+                calculateTotal(); // Recalculate total after settings load
+            } else {
+                console.error("Failed to load settings:", settings.message);
+                // Fallback to default if loading fails
+                currentDeliveryFee = 2;
+                deliveryFeeDisplay.textContent = ` (+$${currentDeliveryFee.toFixed(2)})`;
+                paymentMessages = {
+                    'Cash': 'Please have exact cash ready for pickup/delivery.',
+                    'CreditCard': 'You will be sent a secure payment link via email/text shortly.',
+                    'Venmo': '@CourtneysCookies',
+                    'ATH Movil': 'Please send payment to (818) 261-1648 on ATH Movil.'
+                };
+            }
+        } catch (error) {
+            console.error('Error fetching settings:', error);
+            // Fallback to default if network error
+            currentDeliveryFee = 2;
+            deliveryFeeDisplay.textContent = ` (+$${currentDeliveryFee.toFixed(2)})`;
+            paymentMessages = {
+                'Cash': 'Please have exact cash ready for pickup/delivery.',
+                'CreditCard': 'You will be sent a secure payment link via email/text shortly.',
+                'Venmo': '@CourtneysCookies',
+                'ATH Movil': 'Please send payment to (818) 261-1648 on ATH Movil.'
+            };
+        }
+    };
 
     // Function to calculate total price based on quantities and delivery method
     const calculateTotal = () => {
