@@ -24,10 +24,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             // Password is correct, set session variables
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['username'] = $user['username'];
-            $_SESSION['role'] = $user['role'];
+            $_SESSION['role'] = strtolower(trim($user['role']));
+
 
             $normalizedRole = strtolower($user['role']);
-            if (in_array($normalizedRole, ['admin', 'key master'])) {
+            if (in_array($normalizedRole, ['admin', 'keymaster'])) {
                 $_SESSION['admin_logged_in'] = true;
             }
 
