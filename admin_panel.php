@@ -2,9 +2,10 @@
 session_start();
 require_once 'db_connect.php';
 
-// Ensure admin is logged in
-if (in_array($normalizedRole, ['admin', 'keymaster'])) {
-    $_SESSION['admin_logged_in'] = true;
+// Check if user is logged in and has keymaster (0) or owner (1) role
+if (!isset($_SESSION['user_id']) || ($_SESSION['role'] !== 0 && $_SESSION['role'] !== 1)) {
+    header('Location: admin.html?auth=failed'); // Redirect to login page if not authorized
+    exit;
 }
 
 // Fetch current settings
@@ -111,7 +112,7 @@ try {
 <body>
     <div class="admin-container">
         <h1>Admin Panel</h1>
-        <h2><a href="admin_orders.php">Admin Orders</a></h2>
+        <h2><a href="admin_orders.php">View Orders</a></h2>
         <button class="logout-btn" onclick="logout()">Logout</button>
         <p>Welcome, <?php echo htmlspecialchars($_SESSION['username']); ?> (Role: <?php
             if ($_SESSION['role'] === 0) echo 'Keymaster';

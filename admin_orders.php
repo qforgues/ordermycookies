@@ -1,14 +1,8 @@
 <?php
 session_start();
-echo '<pre>';
-print_r($_SESSION);
-echo '</pre>';
-exit;
-
-session_start();
-$role = strtolower($_SESSION['role'] ?? '');
-if (!in_array($role, ['admin', 'keymaster'])) {
-    header('Location: admin.html?auth=failed');
+// Check if user is logged in and has keymaster (0) or owner (1) role
+if (!isset($_SESSION['user_id']) || ($_SESSION['role'] !== 0 && $_SESSION['role'] !== 1)) {
+    header('Location: admin.html?auth=failed'); // Redirect to login page if not authorized
     exit;
 }
 
