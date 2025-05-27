@@ -5,184 +5,176 @@ document.addEventListener('DOMContentLoaded', () => {
     const orderTotalSpan = document.getElementById('orderTotal');
     const orderForm = document.getElementById('orderForm');
     const alertMessage = document.getElementById('alertMessage');
-    const deliveryMethodRadios = document.querySelectorAll('input[name="delivery_method"]');
+    const deliveryMethodRadios = document.querySelectorAll('input[name="deliveryMethod"]');
     const paymentMethodSelect = document.getElementById('paymentMethod');
     const deliveryFeeDisplay = document.getElementById('deliveryFeeDisplay');
-    const paymentMessageDisplay = document.getElementById('paymentMessageDisplay');
 
     const cookiePrices = {
-        'chocolate_chip': { single: 6, pair: 10 },
+        'chocochip': { single: 6, pair: 10 },
         'oreomg': { single: 6, pair: 10 },
         'snickerdoodle': { single: 6, pair: 10 },
-        'maplebacon': { single: 6, pair: 10 },
-        'peanut_butter': { single: 6, pair: 10 }
+        'peanutbutter': { single: 6, pair: 10 }
     };
 
-    // --- Defaults / Placeholders ---
-    let currentDeliveryFee = 2.00; // Default until loaded
-    let paymentMessages = {
-        'Cash': 'Loading payment info...',
-        'CreditCard': 'Loading payment info...',
-        'Venmo': 'Loading payment info...'
-    };
+    let currentDeliveryFee = 0;
+    let paymentMessages = {};
 
-    // --- Function to fetch settings from the server ---
+    // Function to fetch settings from the server
     const fetchSettings = async () => {
         try {
-            const response = await fetch('get_settings.php'); // Call your settings script
-            if (!response.ok) {
-                throw new Error(`Server returned status ${response.status}`);
-            }
-            const data = await response.json();
+            const response = await fetch('get_settings.php');
+            const settings = await response.json();
 
-            if (data.success && data.settings) {
-                console.log("Settings loaded:", data.settings);
-                // Use loaded settings or keep default if a specific setting is missing
-                currentDeliveryFee = parseFloat(data.settings.delivery_fee_amount) || 2.00;
+            if (settings.success) {
+                currentDeliveryFee = parseFloat(settings.settings.delivery_fee_amount) || 0; // Access .settings.
+                deliveryFeeDisplay.textContent = ` (+$${currentDeliveryFee.toFixed(2)})`;
+
                 paymentMessages = {
-                    'Cash': data.settings.cash_payment_message || 'Please have exact cash ready.',
-                    'CreditCard': data.settings.creditcard_payment_message || 'Payment link will be sent.',
-                    'Venmo': data.settings.venmo_payment_message || 'Venmo @CourtneysCookies.'
+                    'Cash': settings.settings.cash_payment_message,
+                    'CreditCard': settings.settings.creditcard_payment_message,
+                    'Venmo': settings.settings.venmo_payment_message
+                    // Removed ATHMovil
                 };
+                calculateTotal(); // Recalculate total after settings load
             } else {
-                 throw new Error(data.message || "Failed to load settings (invalid format).");
+                console.error("Failed to load settings:", settings.message);
+                // Fallback to default if loading fails
+                currentDeliveryFee = 2;
+                deliveryFeeDisplay.textContent = ` (+$${currentDeliveryFee.toFixed(2)})`;
+                paymentMessages = {
+                    'Cash': 'Please have exact cash ready for pickup/delivery.',
+                    'CreditCard': 'You will be sent a secure payment link via email/text shortly.',
+                    'Venmo': '@CourtneysCookies'
+                };
             }
         } catch (error) {
             console.error('Error fetching settings:', error);
-            // Use hardcoded defaults on any fetch error
-            currentDeliveryFee = 2.00;
+            // Fallback to default if network error
+            currentDeliveryFee = 2;
+            deliveryFeeDisplay.textContent = ` (+$${currentDeliveryFee.toFixed(2)})`;
             paymentMessages = {
-                'Cash': 'Please have exact cash ready (default).',
-                'CreditCard': 'Payment link will be sent (default).',
-                'Venmo': 'Venmo @CourtneysCookies (default).'
+                'Cash': 'Please have exact cash ready for pickup/delivery.',
+                'CreditCard': 'You will be sent a secure payment link via email/text shortly.',
+                'Venmo': '@CourtneysCookies'
             };
-            // Optionally show a non-blocking message
-            // alertMessage.textContent = 'Could not load custom payment messages.';
-            // alertMessage.classList.add('show', 'error');
-        } finally {
-             // Always update display and total after trying to fetch
-             deliveryFeeDisplay.textContent = ` (+$${currentDeliveryFee.toFixed(2)})`;
-             updatePaymentMessage();
-             calculateTotal();
         }
     };
 
-
-    const updatePaymentMessage = () => {
-        const selectedMethod = paymentMethodSelect.value;
-        paymentMessageDisplay.textContent = paymentMessages[selectedMethod] || '';
-    };
-
+    // Function to calculate total price based on quantities and delivery method
     const calculateTotal = () => {
         let subtotal = 0;
-        let cookieCount = 0;
-
         quantityInputs.forEach(input => {
-            cookieCount += parseInt(input.value, 10);
+            const product = input.dataset.product;
+            let quantity = parseInt(input.value);
+
+            if (quantity > 0) {
+                const price = cookiePrices[product];
+                const pairs = Math.floor(quantity / 2);
+                const singles = quantity % 2;
+                subtotal += (pairs * price.pair) + (singles * price.single);
+            }
         });
 
-        const price = cookiePrices['chocolate_chip'];
-        const pairs = Math.floor(cookieCount / 2);
-        const singles = cookieCount % 2;
-        subtotal = (pairs * price.pair) + (singles * price.single);
-
         let currentOverallTotal = subtotal;
-        const selectedDeliveryRadio = document.querySelector('input[name="delivery_method"]:checked');
-        const selectedDeliveryMethod = selectedDeliveryRadio ? selectedDeliveryRadio.value : 'pickup';
-
+        const selectedDeliveryMethod = document.querySelector('input[name="deliveryMethod"]:checked').value;
         if (selectedDeliveryMethod === 'delivery') {
             currentOverallTotal += currentDeliveryFee;
-            deliveryFeeDisplay.style.display = 'inline';
-        } else {
-            deliveryFeeDisplay.style.display = 'none';
         }
 
         orderTotalSpan.textContent = `$${currentOverallTotal.toFixed(2)}`;
-        document.getElementById('total_amount').value = currentOverallTotal.toFixed(2);
-        return currentOverallTotal;
     };
 
-    const updateQuantity = (product, change) => {
-        const input = document.querySelector(`.quantity-input[data-product="${product}"]`);
-        let currentQuantity = parseInt(input.value, 10);
-        currentQuantity += change;
-        if (currentQuantity < 0) currentQuantity = 0;
-        input.value = currentQuantity;
-        document.getElementById(product + '_quantity').value = currentQuantity;
-        calculateTotal();
-    };
+    // Event listeners for quantity buttons
+    increaseButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const product = button.dataset.product;
+            const input = document.querySelector(`.quantity-input[data-product="${product}"]`);
+            input.value = parseInt(input.value) + 1;
+            calculateTotal();
+        });
+    });
 
-    increaseButtons.forEach(button => button.addEventListener('click', () => updateQuantity(button.dataset.product, 1)));
-    decreaseButtons.forEach(button => button.addEventListener('click', () => updateQuantity(button.dataset.product, -1)));
-    deliveryMethodRadios.forEach(radio => radio.addEventListener('change', calculateTotal));
-    paymentMethodSelect.addEventListener('change', updatePaymentMessage);
+    decreaseButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const product = button.dataset.product;
+            const input = document.querySelector(`.quantity-input[data-product="${product}"]`);
+            if (parseInt(input.value) > 0) {
+                input.value = parseInt(input.value) - 1;
+                calculateTotal();
+            }
+        });
+    });
 
+    // Event listener for manual input changes
+    quantityInputs.forEach(input => {
+        input.addEventListener('change', () => {
+            if (parseInt(input.value) < 0 || isNaN(parseInt(input.value))) {
+                input.value = 0;
+            }
+            calculateTotal();
+        });
+    });
+
+    // Event listener for delivery method change
+    deliveryMethodRadios.forEach(radio => {
+        radio.addEventListener('change', () => {
+            calculateTotal();
+        });
+    });
+
+    // Handle form submission
     orderForm.addEventListener('submit', async (event) => {
         event.preventDefault();
-        alertMessage.classList.remove('show', 'success', 'error', 'info');
+
+        alertMessage.classList.remove('show', 'success', 'error');
         alertMessage.textContent = '';
-
-        let cookieCount = 0;
-        quantityInputs.forEach(input => cookieCount += parseInt(input.value, 10));
-
-        if (cookieCount === 0) {
-            alertMessage.textContent = 'Please add at least one cookie!';
-            alertMessage.classList.add('show', 'error');
-            return;
-        }
-
-        calculateTotal();
-
-        alertMessage.textContent = 'Placing your order... please wait.';
-        alertMessage.classList.add('show', 'info');
 
         const formData = new FormData(orderForm);
 
+        // Append cookie quantities to form data
+        quantityInputs.forEach(input => {
+            const product = input.dataset.product;
+            const quantity = parseInt(input.value);
+            formData.append(product + 'Quantity', quantity);
+        });
+
+        // Append calculated total amount
+        formData.append('totalAmount', orderTotalSpan.textContent);
+        // Append current delivery fee (as a number)
+        formData.append('actualDeliveryFee', document.querySelector('input[name="deliveryMethod"]:checked').value === 'delivery' ? currentDeliveryFee : 0);
+
+        // Get selected payment method and its message
+        const selectedPaymentMethod = paymentMethodSelect.value;
+        const paymentMessage = paymentMessages[selectedPaymentMethod] || '';
+        formData.append('selectedPaymentMethod', selectedPaymentMethod);
+        formData.append('paymentMessage', paymentMessage); // Pass the message to the backend
+
+        // For all payment methods (Cash, Credit Card, Venmo), proceed directly with form submission
         try {
-            const response = await fetch('process_orders.php', {
+            const response = await fetch('process_order.php', {
                 method: 'POST',
                 body: formData
             });
 
-            const responseText = await response.text();
-            console.log("Server Response Text:", responseText);
+            const result = await response.json();
 
-            let result;
-            try {
-                 result = JSON.parse(responseText);
-            } catch (jsonError) {
-                console.error('JSON Parsing Error:', jsonError);
-                throw new Error('Server sent an invalid response. See console (F12) for "Server Response Text". It likely contains a PHP error.');
-            }
-
-            if (response.ok && result.success) {
-                alertMessage.classList.remove('info', 'error');
-                alertMessage.classList.add('success');
-                // Use the local paymentMessages object for the payment message
-                const lastPaymentMethod = paymentMethodSelect.value;
-                const paymentMsg = paymentMessages[lastPaymentMethod] || '';
-                alertMessage.innerHTML = `Order placed successfully! (ID: ${result.orderId}).<br>Total: ${result.totalAmount}.<br><strong>${paymentMsg}</strong>`;
+            if (result.success) {
+                alertMessage.classList.add('show', 'success');
+                alertMessage.innerHTML = `Order placed successfully! Your total is ${result.totalAmount}.<br>Payment Method: ${result.selectedPaymentMethod}.<br><strong>${result.paymentMessage}</strong>`;
                 orderForm.reset();
-                quantityInputs.forEach(input => {
-                    input.value = 0;
-                    document.getElementById(input.dataset.product + '_quantity').value = 0;
-                });
-                // Restore the payment method and update the message
-                paymentMethodSelect.value = lastPaymentMethod;
+                quantityInputs.forEach(input => input.value = 0);
                 calculateTotal();
-                updatePaymentMessage(); // Reset payment message display
             } else {
-                throw new Error(result.message || `Server responded with status ${response.status}`);
+                alertMessage.classList.add('show', 'error');
+                alertMessage.textContent = result.message || 'There was an error placing your order.';
             }
-
         } catch (error) {
-            console.error('Submission Error:', error);
-            alertMessage.classList.remove('info', 'success');
-            alertMessage.classList.add('error');
-            alertMessage.textContent = `Error: ${error.message}. Please try again or contact us.`;
+            console.error('Error submitting form:', error);
+            alertMessage.classList.add('show', 'error');
+            alertMessage.textContent = 'Network error or server unreachable.';
         }
     });
 
-    // --- Initial load: Fetch settings, which will then call update/calculate ---
+    // Initial load: Fetch settings and then calculate total
     fetchSettings();
 });
