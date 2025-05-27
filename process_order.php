@@ -1,6 +1,12 @@
 <?php
 // process_orders.php - Handles NEW Customer Order Submissions & Returns JSON
-echo 'got here'; exit();
+ob_start(); // <-- Add this line FIRST
+
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+header('Content-Type: application/json');
+
 // --- Set Header for JSON Response ---
 header('Content-Type: application/json');
 
@@ -91,5 +97,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['full_name'], $_POST['
 
 // --- 4. Echo JSON Response ---
 echo json_encode($response);
+ob_end_clean(); // Prevents stray output before JSON
+
 exit;
 ?>

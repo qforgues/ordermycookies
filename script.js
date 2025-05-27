@@ -107,7 +107,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // --- DEBUGGING CHANGE: Get response as text first ---
             const responseText = await response.text();
-            console.log("Server Response Text:", responseText); // Log raw response
+            console.log("Server Response Text:", responseText); // already present
+            document.body.innerHTML += `<pre style="color:red;">${responseText}</pre>`; // temporarily add to page
+
             // --- END DEBUGGING CHANGE ---
 
             let result;
