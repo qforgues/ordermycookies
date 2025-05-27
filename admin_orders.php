@@ -1,5 +1,11 @@
 <?php
 session_start();
+echo '<pre>';
+print_r($_SESSION);
+echo '</pre>';
+exit;
+
+session_start();
 $role = strtolower($_SESSION['role'] ?? '');
 if (!in_array($role, ['admin', 'keymaster'])) {
     header('Location: admin.html?auth=failed');
