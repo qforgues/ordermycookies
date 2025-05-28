@@ -108,10 +108,10 @@ $customerHeaders .= "Reply-To: $fromEmail\r\n";
 $customerHeaders .= "MIME-Version: 1.0\r\n"; // Added for HTML
 $customerHeaders .= "Content-Type: text/html; charset=UTF-8\r\n"; // Set content type to HTML
 
-// Define some variables for links/URLs (replace with your actual URLs)
-$facebookLink = "https://www.facebook.com/yourpage";
+
+$facebookLink = "https://www.facebook.com/ordermycookies"; 
 $websiteUrl = "OrderMyCookies.com";
-$logoPlaceholderText = "[Your Logo Here]"; // Or use an <img src="URL_TO_LOGO">
+$logoPlaceholderText = "<img src='https://dev.ordermycookies.com/images/logo.jpeg' style='max-width:180px; height:auto;' alt=\"Courtney's Cookies Logo\">";
 
 // Build the HTML Message using HEREDOC syntax for readability
 $customerMessage = <<<HTML
