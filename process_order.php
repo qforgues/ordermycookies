@@ -124,8 +124,7 @@ $customerMessage .= "\nPreferred Time: " . ($pickupTime ?: 'N/A') . "\n";
 $customerMessage .= "\nQuestions? Just reply to this email.\n\n";
 $customerMessage .= "- Courtney's Cookies 🍪";
 
-$customerMailSuccess = mail($email, $customerSubject, $customerMessage, $customerHeaders);
-file_put_contents('email_debug.log', "Customer Email Sent: $customerMailSuccess\nTo: $email\nSubject: $customerSubject\nHeaders: $customerHeaders\nMessage:\n$customerMessage\n\n", FILE_APPEND);
+$customerMailSuccess = mail('quentin.forgues@gmail.com', $customerSubject, $customerMessage, $customerHeaders);
 
 // Final JSON Response
 if ($mailSuccess && $customerMailSuccess && $dbSuccess) {
