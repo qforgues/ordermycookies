@@ -97,39 +97,6 @@ $message .= "\nTotal: $totalAmount\n";
 
 $mailSuccess = mail($to, $subject, $message, $headers);
 
-// Customer Confirmation Email
-$customerSubject = "Thank you for your order! (#$orderId)";
-$customerHeaders = "From: $fromName <$fromEmail>\r\n";
-$customerHeaders .= "Reply-To: $fromEmail\r\n";
-$customerHeaders .= "Content-Type: text/plain; charset=UTF-8";
-
-$customerMessage = "Hi $fullName,\n\n";
-$customerMessage .= "Thank you for your order with Courtney's Cookies! Here are your order details:\n\n";
-$customerMessage .= "Order ID: $orderId\n";
-$customerMessage .= "Name: $fullName\n";
-$customerMessage .= "Email: $email\n";
-$customerMessage .= "Phone: $phone\n\n";
-$customerMessage .= "Address:\n$street - $city, $zip\n\n";
-$customerMessage .= "Delivery Method: " . ucfirst($deliveryMethod) . "\n";
-$customerMessage .= "Preferred Time: " . ($pickupTime ?: 'N/A') . "\n";
-$customerMessage .= "Delivery Fee: $" . number_format($actualDeliveryFee, 2) . "\n\n";
-$customerMessage .= "Payment Method: " . $selectedPaymentMethod . "\n\n";
-
-$customerMessage .= "Order Details:\n";
-if ($chocochipQuantity > 0) $customerMessage .= "Chocolate Chip: $chocochipQuantity\n";
-if ($oreomgQuantity > 0) $customerMessage .= "Ore-OMG: $oreomgQuantity\n";
-if ($snickerdoodleQuantity > 0) $customerMessage .= "Snickerdoodle: $snickerdoodleQuantity\n";
-if ($peanutbutterQuantity > 0) $customerMessage .= "Peanut Butter: $peanutbutterQuantity\n";
-if ($maplebaconQuantity > 0) $customerMessage .= "Maple Bacon: $maplebaconQuantity\n";
-$customerMessage .= "\nTotal: $totalAmount\n\n";
-$customerMessage .= "If you have any questions, just reply to this email.\n\n";
-$customerMessage .= "Thank you for supporting Courtney's Cookies!\n";
-
-$customerMailSuccess = mail($email, $customerSubject, $customerMessage, $customerHeaders);
-
-// Update mailSuccess to require both emails to succeed
-$mailSuccess = $mailSuccess && $customerMailSuccess;
-
 // Final JSON Response
 if ($mailSuccess && $dbSuccess) {
     echo json_encode([
