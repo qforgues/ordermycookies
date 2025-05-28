@@ -124,8 +124,10 @@ $customerMessage .= "\nPreferred Time: " . ($pickupTime ?: 'N/A') . "\n";
 $customerMessage .= "\nQuestions? Just reply to this email.\n\n";
 $customerMessage .= "- Courtney's Cookies 🍪";
 
-$customerMailSuccess = mail('quentin.forgues@gmail.com', $customerSubject, $customerMessage, $customerHeaders);
-
+$customerMailSuccess = mail('quentin.forgues@gmail.com', $customerSubject, $customerMessage, $customerHeaders,  "-fcourtney@ordermycookies.com");
+if (!$customerMailSuccess) {
+    error_log("Failed to send confirmation email to $email");
+}
 // Final JSON Response
 if ($mailSuccess && $customerMailSuccess && $dbSuccess) {
     echo json_encode([
