@@ -97,8 +97,37 @@ $message .= "\nTotal: $totalAmount\n";
 
 $mailSuccess = mail($to, $subject, $message, $headers);
 
+// Customer Confirmation Email
+$customerSubject = "Thanks for your Cookie Order, $fullName!";
+$customerHeaders = "From: $fromName <$fromEmail>\r\n";
+$customerHeaders .= "Reply-To: $fromEmail\r\n";
+$customerHeaders .= "Content-Type: text/plain; charset=UTF-8";
+
+$customerMessage = "Hi $fullName,\n\n";
+$customerMessage .= "Thanks for placing your order with Courtney's Cookies!\n\n";
+$customerMessage .= "Here's what we have for you:\n";
+if ($chocochipQuantity > 0) $customerMessage .= "• Chocolate Chip: $chocochipQuantity\n";
+if ($oreomgQuantity > 0) $customerMessage .= "• Ore-OMG: $oreomgQuantity\n";
+if ($snickerdoodleQuantity > 0) $customerMessage .= "• Snickerdoodle: $snickerdoodleQuantity\n";
+if ($peanutbutterQuantity > 0) $customerMessage .= "• Peanut Butter: $peanutbutterQuantity\n";
+if ($maplebaconQuantity > 0) $customerMessage .= "• Maple Bacon: $maplebaconQuantity\n";
+$customerMessage .= "\nTotal: $totalAmount\n";
+$customerMessage .= "Payment Method: $selectedPaymentMethod\n\n";
+
+if ($deliveryMethod === 'delivery') {
+    $customerMessage .= "We'll deliver to:\n$street\n$city, $state $zip\nDelivery Fee: $" . number_format($actualDeliveryFee, 2) . "\n";
+} else {
+    $customerMessage .= "Pickup Location: Caribbean Smoothie (next to El Yate Bar, Isabel Segunda)\n";
+}
+
+$customerMessage .= "\nPreferred Time: " . ($pickupTime ?: 'N/A') . "\n";
+$customerMessage .= "\nQuestions? Just reply to this email.\n\n";
+$customerMessage .= "- Courtney's Cookies 🍪";
+
+$customerMailSuccess = mail($email, $customerSubject, $customerMessage, $customerHeaders);
+
 // Final JSON Response
-if ($mailSuccess && $dbSuccess) {
+if ($mailSuccess && $customerMailSuccess && $dbSuccess) {
     echo json_encode([
         'success' => true,
         'message' => 'Order placed successfully!',
