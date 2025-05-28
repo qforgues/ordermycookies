@@ -99,19 +99,18 @@ $mailSuccess = mail($to, $subject, $message, $headers);
 
 // --- Customer Confirmation Email (HTML Version) ---
 $host = $_SERVER['HTTP_HOST'] ?? 'dev.ordermycookies.com';
-    $logoUrl = "http://" . $host . "/images/logo.png"; // Make sure images/logo.png exists
-    $subjectCustomer = "We've Received Your Courtneys Cookies Order! 🍪";
-    $bodyCustomer = '<html><body style="font-family: Quicksand, sans-serif; color: #3E2C1C; background-color: #FFF7ED; padding: 20px;"><div style="max-width:600px;margin:auto;background:#ffffff;border-radius:10px;padding:20px;box-shadow:0 0 10px rgba(0,0,0,0.05);"><img src="' . $logoUrl . '" style="max-width:150px;margin:auto;display:block;" alt="Courtneys Cookies"/><h2 style="color:#6B4423;text-align:center;">Thank you for your order!</h2><p style="text-align:center;">We\\\'ve received your delicious order (ID: ' . htmlspecialchars($orderId) . ') and will start baking soon! We\\\'ll send another email when it\\\'s ready. We hope you LOVE them!</p><p style="text-align:center;">Don\\\'t forget to <a href="https://facebook.com/ordermycookies" target="_blank">like and share us on Facebook</a> and tell friends and family about <strong>OrderMyCookies.com</strong>.</p><p style="text-align:center;">We\\\'re rolling out fun discounts and cookie surprises soon, so stay tuned!</p><p style="text-align:center;">Sweetest Regards,<br>- Courtney</p></div></body></html>';
-    
-    // *** This version used sendCustomerEmail - make sure that function exists and works ***
-    // If not, replace it with the mail() call like we did later.
-    //$customerMailSuccess = @sendCustomerEmail($email, $subjectCustomer, $bodyCustomer); 
-    // Or, if sendCustomerEmail isn't defined, use:
-    $customerHeaders = "From: $fromName <$fromEmail>\r\nReply-To: $fromEmail\r\nContent-Type: text/html; charset=UTF-8\r\nMIME-Version: 1.0\r\n";
-    $customerMailSuccess = @mail($email, $subjectCustomer, $bodyCustomer, $customerHeaders);
+$protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? "https://" : "http://";
+$logoUrl = $protocol . $host . "/images/logo.png"; // Use HTTPS if available
+$subjectCustomer = "We've Received Your Courtneys Cookies Order! 🍪";
+$bodyCustomer = '<html><body style="font-family: Quicksand, sans-serif; color: #3E2C1C; background-color: #FFF7ED; padding: 20px;"><div style="max-width:600px;margin:auto;background:#ffffff;border-radius:10px;padding:20px;box-shadow:0 0 10px rgba(0,0,0,0.05);"><img src="' . $logoUrl . '" style="max-width:150px;margin:auto;display:block;" alt="Courtneys Cookies"/><h2 style="color:#6B4423;text-align:center;">Thank you for your order!</h2><p style="text-align:center;">We\'ve received your delicious order (ID: ' . htmlspecialchars($orderId) . ') and will start baking soon! We\'ll send another email when it\'s ready. We hope you LOVE them!</p><p style="text-align:center;">Don\'t forget to <a href="https://facebook.com/ordermycookies" target="_blank">like and share us on Facebook</a> and tell friends and family about <strong>OrderMyCookies.com</strong>.</p><p style="text-align:center;">We\'re rolling out fun discounts and cookie surprises soon, so stay tuned!</p><p style="text-align:center;">Sweetest Regards,<br>- Courtney</p></div></body></html>';
 
-// Send Customer Email (Uncomment to send)
-//$customerMailSuccess = mail($email, $customerSubject, $customerMessage, $customerHeaders);
+// Use correct headers for HTML email
+$customerHeaders = "MIME-Version: 1.0\r\n";
+$customerHeaders .= "Content-type: text/html; charset=UTF-8\r\n";
+$customerHeaders .= "From: $fromName <$fromEmail>\r\n";
+$customerHeaders .= "Reply-To: $fromEmail\r\n";
+
+$customerMailSuccess = mail($email, $subjectCustomer, $bodyCustomer, $customerHeaders);
 
 // Update mailSuccess to require both emails to succeed if sending both
 $mailSuccess = $mailSuccess && $customerMailSuccess;
