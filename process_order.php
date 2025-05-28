@@ -97,26 +97,38 @@ $message .= "\nTotal: $totalAmount\n";
 
 $mailSuccess = mail($to, $subject, $message, $headers);
 
-// --- Customer Confirmation Email (HTML Version) ---
-$host = $_SERVER['HTTP_HOST'] ?? 'dev.ordermycookies.com';
-$protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? "https://" : "http://";
-$logoUrl = $protocol . $host . "/images/logo.png"; // Use HTTPS if available
-$subjectCustomer = "We've Received Your Courtneys Cookies Order! 🍪";
-$bodyCustomer = '<html><body style="font-family: Quicksand, sans-serif; color: #3E2C1C; background-color: #FFF7ED; padding: 20px;"><div style="max-width:600px;margin:auto;background:#ffffff;border-radius:10px;padding:20px;box-shadow:0 0 10px rgba(0,0,0,0.05);"><img src="' . $logoUrl . '" style="max-width:150px;margin:auto;display:block;" alt="Courtneys Cookies"/><h2 style="color:#6B4423;text-align:center;">Thank you for your order!</h2><p style="text-align:center;">We\'ve received your delicious order (ID: ' . htmlspecialchars($orderId) . ') and will start baking soon! We\'ll send another email when it\'s ready. We hope you LOVE them!</p><p style="text-align:center;">Don\'t forget to <a href="https://facebook.com/ordermycookies" target="_blank">like and share us on Facebook</a> and tell friends and family about <strong>OrderMyCookies.com</strong>.</p><p style="text-align:center;">We\'re rolling out fun discounts and cookie surprises soon, so stay tuned!</p><p style="text-align:center;">Sweetest Regards,<br>- Courtney</p></div></body></html>';
-
-// Use correct headers for HTML email
-$customerHeaders = "MIME-Version: 1.0\r\n";
-$customerHeaders .= "Content-type: text/html; charset=UTF-8\r\n";
-$customerHeaders .= "From: $fromName <$fromEmail>\r\n";
+// Customer Confirmation Email
+$customerSubject = "Thank you for your order! (#$orderId)";
+$customerHeaders = "From: $fromName <$fromEmail>\r\n";
 $customerHeaders .= "Reply-To: $fromEmail\r\n";
+$customerHeaders .= "Content-Type: text/plain; charset=UTF-8";
 
-$customerMailSuccess = mail($email, $subjectCustomer, $bodyCustomer, $customerHeaders);
+$customerMessage = "Hi $fullName,\n\n";
+$customerMessage .= "Thank you for your order with Courtney's Cookies! Here are your order details:\n\n";
+$customerMessage .= "Order ID: $orderId\n";
+$customerMessage .= "Name: $fullName\n";
+$customerMessage .= "Email: $email\n";
+$customerMessage .= "Phone: $phone\n\n";
+$customerMessage .= "Address:\n$street - $city, $zip\n\n";
+$customerMessage .= "Delivery Method: " . ucfirst($deliveryMethod) . "\n";
+$customerMessage .= "Preferred Time: " . ($pickupTime ?: 'N/A') . "\n";
+$customerMessage .= "Delivery Fee: $" . number_format($actualDeliveryFee, 2) . "\n\n";
+$customerMessage .= "Payment Method: " . $selectedPaymentMethod . "\n\n";
 
-// Update mailSuccess to require both emails to succeed if sending both
+$customerMessage .= "Order Details:\n";
+if ($chocochipQuantity > 0) $customerMessage .= "Chocolate Chip: $chocochipQuantity\n";
+if ($oreomgQuantity > 0) $customerMessage .= "Ore-OMG: $oreomgQuantity\n";
+if ($snickerdoodleQuantity > 0) $customerMessage .= "Snickerdoodle: $snickerdoodleQuantity\n";
+if ($peanutbutterQuantity > 0) $customerMessage .= "Peanut Butter: $peanutbutterQuantity\n";
+if ($maplebaconQuantity > 0) $customerMessage .= "Maple Bacon: $maplebaconQuantity\n";
+$customerMessage .= "\nTotal: $totalAmount\n\n";
+$customerMessage .= "If you have any questions, just reply to this email.\n\n";
+$customerMessage .= "Thank you for supporting Courtney's Cookies!\n";
+
+$customerMailSuccess = mail($email, $customerSubject, $customerMessage, $customerHeaders);
+
+// Update mailSuccess to require both emails to succeed
 $mailSuccess = $mailSuccess && $customerMailSuccess;
-
-// For testing, you can echo the HTML:
-// echo $customerMessage;
 
 // Final JSON Response
 if ($mailSuccess && $dbSuccess) {
