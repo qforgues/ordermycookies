@@ -125,6 +125,7 @@ $customerMessage .= "\nQuestions? Just reply to this email.\n\n";
 $customerMessage .= "- Courtney's Cookies 🍪";
 
 $customerMailSuccess = mail($email, $customerSubject, $customerMessage, $customerHeaders);
+file_put_contents('email_debug.log', "Customer Email Sent: $customerMailSuccess\nTo: $email\nSubject: $customerSubject\nHeaders: $customerHeaders\nMessage:\n$customerMessage\n\n", FILE_APPEND);
 
 // Final JSON Response
 if ($mailSuccess && $customerMailSuccess && $dbSuccess) {
