@@ -98,113 +98,20 @@ $message .= "\nTotal: $totalAmount\n";
 $mailSuccess = mail($to, $subject, $message, $headers);
 
 // --- Customer Confirmation Email (HTML Version) ---
-// --- Prepare variables for the email ---
-$pickupTimeDisplay = $pickupTime ?: 'N/A'; // Use null coalescing or ternary
-$deliveryMethodDisplay = ucfirst($deliveryMethod); // Prepare the capitalized version
-
-$customerSubject = "Thank you for your order! (#$orderId)";
-$customerHeaders = "From: $fromName <$fromEmail>\r\n";
-$customerHeaders .= "Reply-To: $fromEmail\r\n";
-$customerHeaders .= "MIME-Version: 1.0\r\n"; // Added for HTML
-$customerHeaders .= "Content-Type: text/html; charset=UTF-8\r\n"; // Set content type to HTML
-
-
-$facebookLink = "https://www.facebook.com/ordermycookies"; 
-$websiteUrl = "OrderMyCookies.com";
-$logoPlaceholderText = "<img src='https://dev.ordermycookies.com/images/logo.jpeg' style='max-width:180px; height:auto;' alt=\"Courtney's Cookies Logo\">";
-
-// Build the HTML Message using HEREDOC syntax for readability
-$customerMessage = <<<HTML
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Thank you for your order!</title>
-    <style>
-        /* Basic styles - more robust styling would be needed for full cross-client compatibility */
-        body { margin: 0; padding: 0; background-color: #FDF5E6; font-family: Arial, sans-serif; }
-        .container { background-color: #FFFFFF; max-width: 600px; margin: 20px auto; border: 1px solid #EADDC7; border-radius: 8px; overflow: hidden; }
-        .content { padding: 20px 40px; }
-        .logo { text-align: center; padding: 20px 0; border-bottom: 1px solid #EADDC7; font-size: 24px; color: #cccccc; background-color: #f8f8f8; }
-        h1 { color: #8B4513; text-align: center; font-family: Georgia, serif; font-size: 28px; margin-top: 30px; margin-bottom: 20px; }
-        p { color: #5C5C5C; text-align: center; font-family: Arial, sans-serif; line-height: 1.6; font-size: 16px; margin-bottom: 20px; }
-        a { color: #3b5998; text-decoration: underline; }
-        strong { color: #8B4513; }
-        .signature { color: #5C5C5C; text-align: center; font-family: Georgia, serif; font-style: italic; margin-top: 40px; font-size: 16px; }
-        .details-section { margin-top: 40px; padding-top: 20px; border-top: 1px solid #EADDC7; }
-        .details-section h2 { color: #8B4513; text-align: center; font-family: Georgia, serif; font-size: 20px; margin-bottom: 15px;}
-        .details-table { width: 100%; margin: 20px 0; border-collapse: collapse; }
-        .details-table th, .details-table td { padding: 8px; text-align: left; border-bottom: 1px solid #eee; color: #5C5C5C; }
-        .details-table th { background-color: #f9f9f9; font-weight: bold; }
-        .details-table .total td { font-weight: bold; font-size: 1.1em; border-top: 2px solid #ccc; }
-
-    </style>
-</head>
-<body style="margin: 0; padding: 0; background-color: #FDF5E6; font-family: Arial, sans-serif;">
-    <table width="100%" border="0" cellpadding="0" cellspacing="0" bgcolor="#FDF5E6">
-        <tr>
-            <td align="center" style="padding: 20px 0;">
-                <table class="container" width="600" border="0" cellpadding="0" cellspacing="0" style="background-color: #FFFFFF; border: 1px solid #EADDC7; border-radius: 8px; overflow: hidden;">
-                    <tr>
-                        <td class="logo" style="text-align: center; padding: 20px 0; border-bottom: 1px solid #EADDC7; font-size: 24px; color: #cccccc; background-color: #f8f8f8;">
-                            {$logoPlaceholderText}
-                        </td>
-                    </tr>
-                    <tr>
-                        <td class="content" style="padding: 20px 40px;">
-                            <h1 style="color: #8B4513; text-align: center; font-family: Georgia, serif; font-size: 28px; margin-top: 30px; margin-bottom: 20px;">Thank you for your order!</h1>
-
-                            <p style="color: #5C5C5C; text-align: center; font-family: Arial, sans-serif; line-height: 1.6; font-size: 16px; margin-bottom: 20px;">
-                                We've received your delicious order (ID: {$orderId}) and will start baking soon! We'll send another email when it's ready. We hope you LOVE them!
-                            </p>
-
-                            <p style="color: #5C5C5C; text-align: center; font-family: Arial, sans-serif; line-height: 1.6; font-size: 16px; margin-bottom: 20px;">
-                                Don't forget to <a href="{$facebookLink}" style="color: #3b5998; text-decoration: underline;">like and share us on Facebook</a> and tell friends and family about <strong style="color: #8B4513;">{$websiteUrl}</strong>.
-                            </p>
-
-                            <p style="color: #5C5C5C; text-align: center; font-family: Arial, sans-serif; line-height: 1.6; font-size: 16px; margin-bottom: 20px;">
-                                We're rolling out fun discounts and cookie surprises soon, so stay tuned!
-                            </p>
-
-                            <div class="details-section" style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #EADDC7;">
-                                <h2 style="color: #8B4513; text-align: center; font-family: Georgia, serif; font-size: 20px; margin-bottom: 15px;">Your Order Summary</h2>
-                                <table class="details-table" width="100%" cellpadding="8" cellspacing="0" style="width: 100%; margin: 20px 0; border-collapse: collapse;">
-                                    <tr><td style="padding: 8px; text-align: left; border-bottom: 1px solid #eee; color: #5C5C5C;"><strong>Name:</strong></td><td style="padding: 8px; text-align: left; border-bottom: 1px solid #eee; color: #5C5C5C;">{$fullName}</td></tr>
-                                    <tr><td style="padding: 8px; text-align: left; border-bottom: 1px solid #eee; color: #5C5C5C;"><strong>Email:</strong></td><td style="padding: 8px; text-align: left; border-bottom: 1px solid #eee; color: #5C5C5C;">{$email}</td></tr>
-                                    <tr><td style="padding: 8px; text-align: left; border-bottom: 1px solid #eee; color: #5C5C5C;"><strong>Address:</strong></td><td style="padding: 8px; text-align: left; border-bottom: 1px solid #eee; color: #5C5C5C;">{$street} - {$city}, {$zip}</td></tr>
-                                    <?php $pickupTimeDisplay = $pickupTime ? $pickupTime : 'N/A'; ?>
-                                    <tr><td style="padding: 8px; text-align: left; border-bottom: 1px solid #eee; color: #5C5C5C;"><strong>Delivery:</strong></td><td style="padding: 8px; text-align: left; border-bottom: 1px solid #eee; color: #5C5C5C;">{ucfirst($deliveryMethod)} ({$pickupTimeDisplay})</td></tr>
-                                    <tr><td style="padding: 8px; text-align: left; border-bottom: 1px solid #eee; color: #5C5C5C;"><strong>Payment:</strong></td><td style="padding: 8px; text-align: left; border-bottom: 1px solid #eee; color: #5C5C5C;">{$selectedPaymentMethod}</td></tr>
-                                    <tr><th colspan="2" style="padding: 8px; text-align: left; border-bottom: 1px solid #eee; color: #5C5C5C; background-color: #f9f9f9; font-weight: bold; text-align:center;">Items</th></tr>
-HTML;
-
-// Add cookie items conditionally
-if ($chocochipQuantity > 0) $customerMessage .= "<tr><td style='padding: 8px; text-align: left; border-bottom: 1px solid #eee; color: #5C5C5C;'>Chocolate Chip:</td><td style='padding: 8px; text-align: left; border-bottom: 1px solid #eee; color: #5C5C5C;'>{$chocochipQuantity}</td></tr>";
-if ($oreomgQuantity > 0) $customerMessage .= "<tr><td style='padding: 8px; text-align: left; border-bottom: 1px solid #eee; color: #5C5C5C;'>Ore-OMG:</td><td style='padding: 8px; text-align: left; border-bottom: 1px solid #eee; color: #5C5C5C;'>{$oreomgQuantity}</td></tr>";
-if ($snickerdoodleQuantity > 0) $customerMessage .= "<tr><td style='padding: 8px; text-align: left; border-bottom: 1px solid #eee; color: #5C5C5C;'>Snickerdoodle:</td><td style='padding: 8px; text-align: left; border-bottom: 1px solid #eee; color: #5C5C5C;'>{$snickerdoodleQuantity}</td></tr>";
-if ($peanutbutterQuantity > 0) $customerMessage .= "<tr><td style='padding: 8px; text-align: left; border-bottom: 1px solid #eee; color: #5C5C5C;'>Peanut Butter:</td><td style='padding: 8px; text-align: left; border-bottom: 1px solid #eee; color: #5C5C5C;'>{$peanutbutterQuantity}</td></tr>";
-if ($maplebaconQuantity > 0) $customerMessage .= "<tr><td style='padding: 8px; text-align: left; border-bottom: 1px solid #eee; color: #5C5C5C;'>Maple Bacon:</td><td style='padding: 8px; text-align: left; border-bottom: 1px solid #eee; color: #5C5C5C;'>{$maplebaconQuantity}</td></tr>";
-$customerMessage .= <<<HTML
-                                    <tr class="total"><td style="padding: 8px; text-align: left; border-bottom: 1px solid #eee; color: #5C5C5C; font-weight: bold; font-size: 1.1em; border-top: 2px solid #ccc;"><strong>Total:</strong></td><td style="padding: 8px; text-align: left; border-bottom: 1px solid #eee; color: #5C5C5C; font-weight: bold; font-size: 1.1em; border-top: 2px solid #ccc;"><strong>{$totalAmount}</strong></td></tr>
-                                </table>
-                            </div>
-
-                            <p class="signature" style="color: #5C5C5C; text-align: center; font-family: Georgia, serif; font-style: italic; margin-top: 40px; font-size: 16px;">
-                                Sweetest Regards,<br>- Courtney
-                            </p>
-                        </td>
-                    </tr>
-                </table>
-            </td>
-        </tr>
-    </table>
-</body>
-</html>
-HTML;
+$host = $_SERVER['HTTP_HOST'] ?? 'dev.ordermycookies.com';
+    $logoUrl = "http://" . $host . "/images/logo.png"; // Make sure images/logo.png exists
+    $subjectCustomer = "We've Received Your Courtneys Cookies Order! 🍪";
+    $bodyCustomer = '<html><body style="font-family: Quicksand, sans-serif; color: #3E2C1C; background-color: #FFF7ED; padding: 20px;"><div style="max-width:600px;margin:auto;background:#ffffff;border-radius:10px;padding:20px;box-shadow:0 0 10px rgba(0,0,0,0.05);"><img src="' . $logoUrl . '" style="max-width:150px;margin:auto;display:block;" alt="Courtneys Cookies"/><h2 style="color:#6B4423;text-align:center;">Thank you for your order!</h2><p style="text-align:center;">We\\\'ve received your delicious order (ID: ' . htmlspecialchars($orderId) . ') and will start baking soon! We\\\'ll send another email when it\\\'s ready. We hope you LOVE them!</p><p style="text-align:center;">Don\\\'t forget to <a href="https://facebook.com/ordermycookies" target="_blank">like and share us on Facebook</a> and tell friends and family about <strong>OrderMyCookies.com</strong>.</p><p style="text-align:center;">We\\\'re rolling out fun discounts and cookie surprises soon, so stay tuned!</p><p style="text-align:center;">Sweetest Regards,<br>- Courtney</p></div></body></html>';
+    
+    // *** This version used sendCustomerEmail - make sure that function exists and works ***
+    // If not, replace it with the mail() call like we did later.
+    //$customerMailSuccess = @sendCustomerEmail($email, $subjectCustomer, $bodyCustomer); 
+    // Or, if sendCustomerEmail isn't defined, use:
+    $customerHeaders = "From: $fromName <$fromEmail>\r\nReply-To: $fromEmail\r\nContent-Type: text/html; charset=UTF-8\r\nMIME-Version: 1.0\r\n";
+    $customerMailSuccess = @mail($email, $subjectCustomer, $bodyCustomer, $customerHeaders);
 
 // Send Customer Email (Uncomment to send)
-$customerMailSuccess = mail($email, $customerSubject, $customerMessage, $customerHeaders);
+//$customerMailSuccess = mail($email, $customerSubject, $customerMessage, $customerHeaders);
 
 // Update mailSuccess to require both emails to succeed if sending both
 $mailSuccess = $mailSuccess && $customerMailSuccess;
