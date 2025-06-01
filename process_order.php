@@ -8,6 +8,28 @@ require_once 'inc/EasyMailClient.php';
 // Instantiate the EasyMailClient
 $mailClient = new EasyMailClient();
 
+$testEmail = 'quentin.forgues@gmail.com';  // replace with your actual test address
+$testName  = 'Quentin';
+$testSubject = 'TEST: Courtney\'s Cookies Order Confirmation';
+$testHtml = '<h1>Test Email</h1><p>If you see this, the customer email worked.</p>';
+$testPlain = "Test Email\n\nIf you see this, the customer email worked.";
+
+$sent = $mailClient->sendEmail(
+    $testEmail,
+    $testName,
+    $testSubject,
+    $testHtml,
+    $testPlain
+);
+
+if (! $sent) {
+    $mailer = $mailClient->getMailerInstance();
+    $err = $mailer->ErrorInfo ?: 'Unknown error';
+    echo "Send FAILED: {$err}\n";
+} else {
+    echo "Send SUCCEEDED to {$testEmail}\n";
+}
+exit();
 // =========================================================================
 // ORIGINAL ORDER PROCESSING LOGIC (REMAINS THE SAME)
 // =========================================================================
