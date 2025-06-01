@@ -104,6 +104,7 @@ if ($dbSuccess && $orderId) { // Only attempt to send emails if DB insert was su
     // =========================================================================
     // NEW CUSTOMER CONFIRMATION EMAIL
     // =========================================================================
+    $mailClient = new EasyMailClient();
     $customerSubject = "Your Courtney's Cookies Order is Confirmed! (#$orderId)";
     
     // --- START OF HTML EMAIL TEMPLATE ---
