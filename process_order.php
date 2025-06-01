@@ -15,11 +15,11 @@ require_once __DIR__ . '/inc/EasyMailClient.php';
 // 3) Then include your DB connection
 require_once 'db_connect.php';
 
-// Instantiate the EasyMailClient
+// Instantiate the EasyMailClient ONCE
 $mailClient = new EasyMailClient();
 
 // =========================================================================
-// ORIGINAL ORDER PROCESSING LOGIC (REMAINS THE SAME)
+// ORIGINAL ORDER PROCESSING LOGIC
 // =========================================================================
 
 // Determine Admin Recipient Email
@@ -73,23 +73,9 @@ try {
     ");
 
     $stmt->execute([
-        $fullName,
-        $email,
-        $phone,
-        $street,
-        $city,
-        $state,
-        $zip,
-        $chocochipQuantity,
-        $peanutbutterQuantity,
-        $oreomgQuantity,
-        $snickerdoodleQuantity,
-        $maplebaconQuantity,
-        $totalAmount,
-        $deliveryMethod,
-        $pickupTime,
-        $actualDeliveryFee,
-        $selectedPaymentMethod
+        $fullName, $email, $phone, $street, $city, $state, $zip,
+        $chocochipQuantity, $peanutbutterQuantity, $oreomgQuantity, $snickerdoodleQuantity, $maplebaconQuantity,
+        $totalAmount, $deliveryMethod, $pickupTime, $actualDeliveryFee, $selectedPaymentMethod
     ]);
 
     $orderId   = $pdo->lastInsertId();
@@ -138,23 +124,24 @@ if ($dbSuccess && $orderId) {
 
     $mailSuccess = $mailClient->sendEmail(
         $adminToEmail,
-        'Admin',
+        'Admin', // Recipient name for admin
         $adminSubject,
         $adminMessageHtml,
-        '' // No plain-text needed for admin
+        '' // No plain-text needed for admin, or generate one if desired
     );
 
     if (! $mailSuccess) {
         error_log(
             "❌ Admin send FAILED for order #{$orderId}  | ErrorInfo: "
-            . $mailClient->getMailerInstance()->ErrorInfo
+            . $mailClient->getMailerInstance()->ErrorInfo // Access PHPMailer's error info
         );
     }
 
     // ────────────────────────────────────────────────────────────────────────────
-    // Reset the mail client so it doesn’t carry over recipients/headers
+    // DO NOT Reset the mail client here. The same instance will be reused.
+    // The EasyMailClient->sendEmail() method already clears recipients.
+    // $mailClient = new EasyMailClient(); // <<< THIS LINE WAS REMOVED
     // ────────────────────────────────────────────────────────────────────────────
-    $mailClient = new EasyMailClient();
 
     // ────────────────────────────────────────────────────────────────────────────
     // NEW CUSTOMER CONFIRMATION EMAIL
@@ -242,30 +229,17 @@ HTML;
     $customerMessagePlainText .= "Thank you so much for your order! I'm so excited to bake up these fresh, delicious cookies just for you. Your support means the world to me!\n\n";
     $customerMessagePlainText .= "ORDER SUMMARY (ID: #$orderId)\n";
     $customerMessagePlainText .= "--------------------------------\n";
-    if ($chocochipQuantity > 0) {
-        $customerMessagePlainText .= "• Chocolate Chip: $chocochipQuantity\n";
-    }
-    if ($oreomgQuantity > 0) {
-        $customerMessagePlainText .= "• Ore-OMG: $oreomgQuantity\n";
-    }
-    if ($snickerdoodleQuantity > 0) {
-        $customerMessagePlainText .= "• Snickerdoodle: $snickerdoodleQuantity\n";
-    }
-    if ($peanutbutterQuantity > 0) {
-        $customerMessagePlainText .= "• Peanut Butter: $peanutbutterQuantity\n";
-    }
-    if ($maplebaconQuantity > 0) {
-        $customerMessagePlainText .= "• Maple Bacon: $maplebaconQuantity\n";
-    }
+    if ($chocochipQuantity > 0) { $customerMessagePlainText .= "• Chocolate Chip: $chocochipQuantity\n"; }
+    if ($oreomgQuantity > 0) { $customerMessagePlainText .= "• Ore-OMG: $oreomgQuantity\n"; }
+    if ($snickerdoodleQuantity > 0) { $customerMessagePlainText .= "• Snickerdoodle: $snickerdoodleQuantity\n"; }
+    if ($peanutbutterQuantity > 0) { $customerMessagePlainText .= "• Peanut Butter: $peanutbutterQuantity\n"; }
+    if ($maplebaconQuantity > 0) { $customerMessagePlainText .= "• Maple Bacon: $maplebaconQuantity\n"; }
     $customerMessagePlainText .= "\nTotal: $totalAmount\n";
     $customerMessagePlainText .= "Payment Method: $selectedPaymentMethod\n\n";
     if ($deliveryMethod === 'delivery') {
-        $customerMessagePlainText .=
-            "Delivery To:\n$street\n$city, $state $zip\n"
-          . "Delivery Fee: $" . number_format($actualDeliveryFee, 2) . "\n";
+        $customerMessagePlainText .= "Delivery To:\n$street\n$city, $state $zip\nDelivery Fee: $" . number_format($actualDeliveryFee, 2) . "\n";
     } else {
-        $customerMessagePlainText .=
-            "Pickup Location: Caribbean Smoothie (next to El Yate Bar, Isabel Segunda)\n";
+        $customerMessagePlainText .= "Pickup Location: Caribbean Smoothie (next to El Yate Bar, Isabel Segunda)\n";
     }
     $customerMessagePlainText .= "\nRequested Time: " . ($pickupTime ?: 'N/A') . "\n";
     $customerMessagePlainText .= "--------------------------------\n\n";
@@ -274,26 +248,20 @@ HTML;
 
     // Send to the customer's email address
     $customerMailSuccess = $mailClient->sendEmail(
-        $email,
-        $fullName,
+        $email,                     // Customer's email address
+        $fullName,                  // Customer's name
         $customerSubject,
         $customerMessageHtml,
         $customerMessagePlainText
     );
 
-    // Detailed logging if send fails
     if (! $customerMailSuccess) {
-        $mailer = $mailClient->getMailerInstance();
-        $err    = $mailer->ErrorInfo ?: 'Unknown error';
         error_log(
-            "❌ Customer send FAILED at " . date('c') .
-            "  | To: {$email}  | ErrorInfo: {$err}"
+            "❌ Customer send FAILED for order #{$orderId} to {$email} | ErrorInfo: "
+            . $mailClient->getMailerInstance()->ErrorInfo // Access PHPMailer's error info
         );
     } else {
-        error_log(
-            "✅ Customer send SUCCEEDED at " . date('c') .
-            "  | To: {$email}"
-        );
+         error_log("✅ Customer send SUCCEEDED for order #{$orderId} to {$email}");
     }
 }
 
@@ -309,22 +277,24 @@ if ($mailSuccess && $customerMailSuccess && $dbSuccess) {
     ]);
 } else {
     $errorMessages = [];
-    if (! $dbSuccess) {
-        $errorMessages[] = "There was an issue saving your order to our system.";
+    if (! $dbSuccess) { $errorMessages[] = "There was an issue saving your order to our system."; }
+    // Only mention email errors if the DB part was successful
+    if ($dbSuccess && ! $mailSuccess) { $errorMessages[] = "Order saved, but failed to send admin notification email."; }
+    if ($dbSuccess && ! $customerMailSuccess) { $errorMessages[] = "Order saved, but we failed to send your confirmation email. Please contact us if you don't receive it shortly."; }
+    
+    $clientErrorMessage = $dbSuccess ? implode(" ", $errorMessages) : "Failed to place order. Please try again or contact us directly.";
+    // If DB failed, it's the primary error. If DB succeeded but emails failed, list those.
+    if (empty($errorMessages) && !$dbSuccess) { // Should not happen if dbSuccess is false, but as a safeguard
+        $clientErrorMessage = "Failed to place order. Please try again or contact us directly.";
+    } else if (empty($errorMessages) && ($dbSuccess && (!$mailSuccess || !$customerMailSuccess))) { // Should not happen if email flags are false
+         $clientErrorMessage = "Order processed, but there was an issue with email notifications. Please check your order status with us.";
     }
-    if ($dbSuccess && ! $mailSuccess) {
-        $errorMessages[] = "Order saved, but failed to send admin notification email.";
-    }
-    if ($dbSuccess && ! $customerMailSuccess) {
-        $errorMessages[] = "Order saved, but we failed to send your confirmation email. Please contact us if you don't receive it shortly.";
-    }
-    $clientErrorMessage = $dbSuccess
-        ? implode(" ", $errorMessages)
-        : "Failed to place order. Please try again or contact us directly.";
+
+
     echo json_encode([
         'success'   => false,
         'message'   => $clientErrorMessage,
-        'orderId'   => $orderId
+        'orderId'   => $orderId // Still useful to return orderId even on partial failure for logging/tracing
     ]);
 }
 ?>
