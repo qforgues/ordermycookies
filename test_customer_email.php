@@ -1,8 +1,13 @@
 <?php
 // test_customer_email.php
 
-// Only load EasyMailClient. Do NOT include db_connect or any order code.
-require_once 'inc/EasyMailClient.php';
+//    Change these paths if PHPMailer is located elsewhere in your repo.
+require_once __DIR__ . '/PHPMailer/src/Exception.php';
+require_once __DIR__ . '/PHPMailer/src/PHPMailer.php';
+require_once __DIR__ . '/PHPMailer/src/SMTP.php';
+
+// 2. Now load EasyMailClient (which depends on PHPMailer)
+require_once __DIR__ . '/inc/EasyMailClient.php';
 
 // Instantiate a fresh mail client
 $mailClient = new EasyMailClient();
