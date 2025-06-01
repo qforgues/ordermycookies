@@ -1,4 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // --- Existing variables (no change) ---
     const quantityInputs = document.querySelectorAll('.quantity-input');
     const increaseButtons = document.querySelectorAll('.increase-quantity');
     const decreaseButtons = document.querySelectorAll('.decrease-quantity');
@@ -10,26 +11,29 @@ document.addEventListener('DOMContentLoaded', () => {
     const deliveryFeeDisplay = document.getElementById('deliveryFeeDisplay');
     const addressSection = document.getElementById('addressSection');
 
+    // --- NEW: Add a variable for the submit button ---
+    const submitButton = orderForm.querySelector('button[type="submit"]');
+
     const cookiePrices = {
         'chocochip': { single: 6, pair: 10 },
         'oreomg': { single: 6, pair: 10 },
         'snickerdoodle': { single: 6, pair: 10 },
         'maplebacon': { single: 6, pair: 10 },
-        'peanutbutter': { single: 6, pair: 10 },
-        'maplebacon': { single: 6, pair: 10 }
+        'peanutbutter': { single: 6, pair: 10 }
+        // Note: You had maplebacon twice, I removed the duplicate.
     };
 
     let currentDeliveryFee = 0;
     let paymentMessages = {};
 
-    // Function to fetch settings from the server
+    // --- All functions like fetchSettings() and calculateTotal() remain unchanged ---
     const fetchSettings = async () => {
         try {
             const response = await fetch('get_settings.php');
             const settings = await response.json();
 
             if (settings.success) {
-                currentDeliveryFee = parseFloat(settings.settings.delivery_fee_amount) || 0; // Access .settings.
+                currentDeliveryFee = parseFloat(settings.settings.delivery_fee_amount) || 0;
                 deliveryFeeDisplay.textContent = ` (+$${currentDeliveryFee.toFixed(2)})`;
 
                 paymentMessages = {
@@ -38,10 +42,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     'Venmo': settings.settings.venmo_payment_message,
                     'ATH Movil': settings.settings.athmovil_payment_message
                 };
-                calculateTotal(); // Recalculate total after settings load
+                calculateTotal();
             } else {
                 console.error("Failed to load settings:", settings.message);
-                // Fallback to default if loading fails
+                // Fallback logic remains
                 currentDeliveryFee = 2;
                 deliveryFeeDisplay.textContent = ` (+$${currentDeliveryFee.toFixed(2)})`;
                 paymentMessages = {
@@ -53,10 +57,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch (error) {
             console.error('Error fetching settings:', error);
-            // Fallback to default if network error
+             // Fallback logic remains
             currentDeliveryFee = 2;
             deliveryFeeDisplay.textContent = ` (+$${currentDeliveryFee.toFixed(2)})`;
-            paymentMessages = {
+             paymentMessages = {
                 'Cash': 'Please have exact cash ready for pickup/delivery.',
                 'CreditCard': 'You will be sent a secure payment link via email/text shortly.',
                 'Venmo': '@CourtneysCookies',
@@ -65,7 +69,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // Function to calculate total price based on quantities and delivery method
     const calculateTotal = () => {
         let subtotal = 0;
         quantityInputs.forEach(input => {
@@ -88,93 +91,45 @@ document.addEventListener('DOMContentLoaded', () => {
 
         orderTotalSpan.textContent = `$${currentOverallTotal.toFixed(2)}`;
     };
-
-    // Event listeners for quantity buttons
-    increaseButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            const product = button.dataset.product;
-            const input = document.querySelector(`.quantity-input[data-product="${product}"]`);
-            input.value = parseInt(input.value) + 1;
-            calculateTotal();
-        });
-    });
-
-    decreaseButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            const product = button.dataset.product;
-            const input = document.querySelector(`.quantity-input[data-product="${product}"]`);
-            if (parseInt(input.value) > 0) {
-                input.value = parseInt(input.value) - 1;
-                calculateTotal();
-            }
-        });
-    });
-
-    // Event listener for manual input changes
-    quantityInputs.forEach(input => {
-        input.addEventListener('change', () => {
-            if (parseInt(input.value) < 0 || isNaN(parseInt(input.value))) {
-                input.value = 0;
-            }
-            calculateTotal();
-        });
-    });
-
-    // Function to toggle address section visibility
-    function toggleAddressSection() {
-        const selectedDeliveryMethod = document.querySelector('input[name="deliveryMethod"]:checked').value;
-        if (selectedDeliveryMethod === 'delivery') {
-            addressSection.style.display = '';
-        } else {
-            addressSection.style.display = 'none';
-        }
-    }
-
-    // Initial toggle on page load
+    
+    // All other event listeners remain unchanged...
+    increaseButtons.forEach(button => { button.addEventListener('click', () => { /* ... */ const product = button.dataset.product; const input = document.querySelector(`.quantity-input[data-product="${product}"]`); input.value = parseInt(input.value) + 1; calculateTotal(); }); });
+    decreaseButtons.forEach(button => { button.addEventListener('click', () => { /* ... */ const product = button.dataset.product; const input = document.querySelector(`.quantity-input[data-product="${product}"]`); if (parseInt(input.value) > 0) { input.value = parseInt(input.value) - 1; calculateTotal(); } }); });
+    quantityInputs.forEach(input => { input.addEventListener('change', () => { /* ... */ if (parseInt(input.value) < 0 || isNaN(parseInt(input.value))) { input.value = 0; } calculateTotal(); }); });
+    function toggleAddressSection() { const selectedDeliveryMethod = document.querySelector('input[name="deliveryMethod"]:checked').value; if (selectedDeliveryMethod === 'delivery') { addressSection.style.display = ''; } else { addressSection.style.display = 'none'; } }
     toggleAddressSection();
+    deliveryMethodRadios.forEach(radio => { radio.addEventListener('change', () => { calculateTotal(); toggleAddressSection(); }); });
 
-    // Event listener for delivery method change
-    deliveryMethodRadios.forEach(radio => {
-        radio.addEventListener('change', () => {
-            calculateTotal();
-            toggleAddressSection();
-        });
-    });
 
     // Handle form submission
     orderForm.addEventListener('submit', async (event) => {
         event.preventDefault();
 
+        // --- CHANGE: Disable button and show feedback ---
+        submitButton.disabled = true;
+        submitButton.textContent = 'Placing Order...';
+
         alertMessage.classList.remove('show', 'success', 'error');
         alertMessage.textContent = '';
 
         const formData = new FormData(orderForm);
-
-        // Append cookie quantities to form data
         quantityInputs.forEach(input => {
             const product = input.dataset.product;
             const quantity = parseInt(input.value);
             formData.append(product + 'Quantity', quantity);
         });
-
-        // Append calculated total amount
         formData.append('totalAmount', orderTotalSpan.textContent.replace('$', ''));
-        // Append current delivery fee (as a number)
         formData.append('actualDeliveryFee', (document.querySelector('input[name="deliveryMethod"]:checked').value === 'delivery' ? currentDeliveryFee : 0).toString());
-
-        // Get selected payment method and its message
         const selectedPaymentMethod = paymentMethodSelect.value;
         const paymentMessage = paymentMessages[selectedPaymentMethod] || '';
         formData.append('selectedPaymentMethod', selectedPaymentMethod);
-        formData.append('paymentMessage', paymentMessage); // Pass the message to the backend
+        formData.append('paymentMessage', paymentMessage);
 
-        // For all payment methods (Cash, Credit Card, Venmo, ATH Movil), proceed directly with form submission
         try {
             const response = await fetch('process_order.php', {
                 method: 'POST',
                 body: formData
             });
-
             const result = await response.json();
 
             if (result.success) {
@@ -183,17 +138,27 @@ document.addEventListener('DOMContentLoaded', () => {
                 orderForm.reset();
                 quantityInputs.forEach(input => input.value = 0);
                 calculateTotal();
+                // --- CHANGE: Re-enable button with new text for another order ---
+                submitButton.disabled = false;
+                submitButton.textContent = 'Place Another Order';
             } else {
                 alertMessage.classList.add('show', 'error');
                 alertMessage.textContent = result.message || 'There was an error placing your order.';
+                // --- CHANGE: Re-enable button on error ---
+                submitButton.disabled = false;
+                submitButton.textContent = 'Place Order';
             }
         } catch (error) {
             console.error('Error submitting form:', error);
             alertMessage.classList.add('show', 'error');
             alertMessage.textContent = 'Network error or server unreachable.';
+            // --- CHANGE: Re-enable button on critical error ---
+            submitButton.disabled = false;
+            submitButton.textContent = 'Place Order';
         }
     });
 
     // Initial load: Fetch settings and then calculate total
     fetchSettings();
 });
+// --- END OF SCRIPT ---
