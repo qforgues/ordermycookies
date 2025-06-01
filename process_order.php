@@ -2,22 +2,30 @@
 header('Content-Type: application/json');
 require_once 'db_connect.php'; // Include your database connection
 
+// Include the EasyMailClient class
+// Assuming EasyMailClient.php is in the 'inc' folder in your project root
+require_once 'inc/EasyMailClient.php';
+
+// Instantiate the EasyMailClient
+// This will use the default SMTP settings configured within EasyMailClient.php
+// (i.e., mail.ordermycookies.com, courtney@ordermycookies.com, Cookies143!)
+$mailClient = new EasyMailClient();
+
 // =========================================================================
 // ORIGINAL ORDER PROCESSING LOGIC (EXISTING)
 // =========================================================================
 
-// Email Setup (Admin Notification)
-$to = getenv('DEPLOY_ENV');
-if (!$to) {
+// Determine Admin Recipient Email
+$adminToEmail = getenv('DEPLOY_ENV');
+if (!$adminToEmail) {
     $hostname = $_SERVER['HTTP_HOST'] ?? 'localhost';
     if (str_contains($hostname, 'dev.') || str_contains($hostname, 'localhost')) {
-        $to = 'quentin.forgues@gmail.com';
+        $adminToEmail = 'quentin.forgues@gmail.com'; // Dev/localhost admin recipient
     } else {
-        $to = 'courtney.forgues@gmail.com';
+        $adminToEmail = 'courtney.forgues@gmail.com'; // Production admin recipient
     }
 }
-$fromEmail = "courtney@ordermycookies.com";
-$fromName = "Courtney's Cookies";
+// Note: $fromEmail and $fromName are now handled by EasyMailClient's defaults
 
 // Input Validation
 $required = ['fullName', 'email', 'phone', 'state', 'zip', 'selectedPaymentMethod'];
@@ -30,7 +38,7 @@ foreach ($required as $field) {
 
 // Sanitize & Process Input Data
 $fullName = htmlspecialchars($_POST['fullName']);
-$email = htmlspecialchars($_POST['email']);
+$email = filter_var($_POST['email'], FILTER_SANITIZE_EMAIL); // Better sanitization for email
 $phone = htmlspecialchars($_POST['phone']);
 $street = htmlspecialchars($_POST['street']);
 $city = htmlspecialchars($_POST['city']);
@@ -44,9 +52,9 @@ $oreomgQuantity = (int)($_POST['oreomgQuantity'] ?? 0);
 $snickerdoodleQuantity = (int)($_POST['snickerdoodleQuantity'] ?? 0);
 $peanutbutterQuantity = (int)($_POST['peanutbutterQuantity'] ?? 0);
 $maplebaconQuantity = (int)($_POST['maplebaconQuantity'] ?? 0);
-$totalAmount = htmlspecialchars($_POST['totalAmount'] ?? '$0.00');
+$totalAmount = htmlspecialchars($_POST['totalAmount'] ?? '$0.00'); // Keep as string for display
 $selectedPaymentMethod = htmlspecialchars($_POST['selectedPaymentMethod']);
-$paymentMessage = htmlspecialchars($_POST['paymentMessage']);
+$paymentMessage = htmlspecialchars($_POST['paymentMessage']); // This seems to be a success message from client-side
 
 $dbSuccess = false;
 $orderId = null; // Variable to hold the new order ID
@@ -70,78 +78,134 @@ try {
 
 } catch (PDOException $e) {
     error_log("Database Error in process_order.php: " . $e->getMessage());
+    // It's good practice to also inform the client, but avoid sending raw SQL errors.
+    // The final JSON response will indicate failure if $dbSuccess remains false.
     $dbSuccess = false;
 }
 
-// Admin Notification Email
-$subject = "New Cookie Order from $fullName (#$orderId)"; // Added Order ID
-$headers = "From: $fromName <$fromEmail>\r\n";
-$headers .= "Reply-To: $email\r\n";
-$headers .= "Content-Type: text/plain; charset=UTF-8";
+// Prepare Email Content (common parts)
+$orderDetailsHtml = "<p><strong>Order Details:</strong></p><ul>";
+if ($chocochipQuantity > 0) $orderDetailsHtml .= "<li>Chocolate Chip: $chocochipQuantity</li>";
+if ($oreomgQuantity > 0) $orderDetailsHtml .= "<li>Ore-OMG: $oreomgQuantity</li>";
+if ($snickerdoodleQuantity > 0) $orderDetailsHtml .= "<li>Snickerdoodle: $snickerdoodleQuantity</li>";
+if ($peanutbutterQuantity > 0) $orderDetailsHtml .= "<li>Peanut Butter: $peanutbutterQuantity</li>";
+if ($maplebaconQuantity > 0) $orderDetailsHtml .= "<li>Maple Bacon: $maplebaconQuantity</li>";
+$orderDetailsHtml .= "</ul>";
+$orderDetailsHtml .= "<p><strong>Total: $totalAmount</strong></p>";
 
-$message = "New Cookie Order! (ID: $orderId)\n\n";
-$message .= "Name: $fullName\nEmail: $email\nPhone: $phone\n\n";
-$message .= "Address:\n$street - $city, $zip\n\n";
-$message .= "Delivery Method: " . ucfirst($deliveryMethod) . "\n";
-$message .= "Preferred Time: " . ($pickupTime ?: 'N/A') . "\n";
-$message .= "Delivery Fee: $" . number_format($actualDeliveryFee, 2) . "\n\n";
-$message .= "Payment Method: " . $selectedPaymentMethod . "\n\n";
+$mailSuccess = false;
+$customerMailSuccess = false;
 
-$message .= "Order Details:\n";
-if ($chocochipQuantity > 0) $message .= "Chocolate Chip: $chocochipQuantity\n";
-if ($oreomgQuantity > 0) $message .= "Ore-OMG: $oreomgQuantity\n";
-if ($snickerdoodleQuantity > 0) $message .= "Snickerdoodle: $snickerdoodleQuantity\n";
-if ($peanutbutterQuantity > 0) $message .= "Peanut Butter: $peanutbutterQuantity\n";
-if ($maplebaconQuantity > 0) $message .= "Maple Bacon: $maplebaconQuantity\n";
-$message .= "\nTotal: $totalAmount\n";
+if ($dbSuccess && $orderId) { // Only attempt to send emails if DB insert was successful and we have an order ID
 
-$mailSuccess = mail($to, $subject, $message, $headers);
+    // Admin Notification Email
+    $adminSubject = "New Cookie Order from $fullName (#$orderId)";
+    
+    $adminMessageHtml = "<h1>New Cookie Order! (ID: $orderId)</h1>";
+    $adminMessageHtml .= "<p><strong>Name:</strong> $fullName<br>";
+    $adminMessageHtml .= "<strong>Email:</strong> $email<br>";
+    $adminMessageHtml .= "<strong>Phone:</strong> $phone</p>";
+    $adminMessageHtml .= "<p><strong>Address:</strong><br>$street - $city, $zip</p>";
+    $adminMessageHtml .= "<p><strong>Delivery Method:</strong> " . ucfirst($deliveryMethod) . "<br>";
+    $adminMessageHtml .= "<strong>Preferred Time:</strong> " . ($pickupTime ?: 'N/A') . "<br>";
+    $adminMessageHtml .= "<strong>Delivery Fee:</strong> $" . number_format($actualDeliveryFee, 2) . "</p>";
+    $adminMessageHtml .= "<p><strong>Payment Method:</strong> " . $selectedPaymentMethod . "</p>";
+    $adminMessageHtml .= $orderDetailsHtml;
 
-// Customer Confirmation Email
-$customerSubject = "Thanks for your Cookie Order, $fullName!";
-$customerHeaders = "From: $fromName <$fromEmail>\r\n";
-$customerHeaders .= "Reply-To: $fromEmail\r\n";
-$customerHeaders .= "Content-Type: text/plain; charset=UTF-8";
+    // Plain text version for admin (optional, but good practice)
+    $adminMessagePlainText = "New Cookie Order! (ID: $orderId)\n\n";
+    $adminMessagePlainText .= "Name: $fullName\nEmail: $email\nPhone: $phone\n\n";
+    $adminMessagePlainText .= "Address:\n$street - $city, $zip\n\n";
+    $adminMessagePlainText .= "Delivery Method: " . ucfirst($deliveryMethod) . "\n";
+    $adminMessagePlainText .= "Preferred Time: " . ($pickupTime ?: 'N/A') . "\n";
+    $adminMessagePlainText .= "Delivery Fee: $" . number_format($actualDeliveryFee, 2) . "\n\n";
+    $adminMessagePlainText .= "Payment Method: " . $selectedPaymentMethod . "\n\n";
+    $adminMessagePlainText .= "Order Details:\n";
+    if ($chocochipQuantity > 0) $adminMessagePlainText .= "Chocolate Chip: $chocochipQuantity\n";
+    if ($oreomgQuantity > 0) $adminMessagePlainText .= "Ore-OMG: $oreomgQuantity\n";
+    if ($snickerdoodleQuantity > 0) $adminMessagePlainText .= "Snickerdoodle: $snickerdoodleQuantity\n";
+    if ($peanutbutterQuantity > 0) $adminMessagePlainText .= "Peanut Butter: $peanutbutterQuantity\n";
+    if ($maplebaconQuantity > 0) $adminMessagePlainText .= "Maple Bacon: $maplebaconQuantity\n";
+    $adminMessagePlainText .= "\nTotal: $totalAmount\n";
 
-$customerMessage = "Hi $fullName,\n\n";
-$customerMessage .= "Thanks for placing your order with Courtney's Cookies!\n\n";
-$customerMessage .= "Here's what we have for you:\n";
-if ($chocochipQuantity > 0) $customerMessage .= "• Chocolate Chip: $chocochipQuantity\n";
-if ($oreomgQuantity > 0) $customerMessage .= "• Ore-OMG: $oreomgQuantity\n";
-if ($snickerdoodleQuantity > 0) $customerMessage .= "• Snickerdoodle: $snickerdoodleQuantity\n";
-if ($peanutbutterQuantity > 0) $customerMessage .= "• Peanut Butter: $peanutbutterQuantity\n";
-if ($maplebaconQuantity > 0) $customerMessage .= "• Maple Bacon: $maplebaconQuantity\n";
-$customerMessage .= "\nTotal: $totalAmount\n";
-$customerMessage .= "Payment Method: $selectedPaymentMethod\n\n";
+    // The EasyMailClient uses its configured "From" address by default.
+    // The $adminToEmail is the recipient.
+    // The $fullName can be used as the recipient name for the admin email if desired, or leave blank.
+    $mailSuccess = $mailClient->sendEmail($adminToEmail, 'Admin', $adminSubject, $adminMessageHtml, $adminMessagePlainText);
+    if (!$mailSuccess) {
+        error_log("Failed to send admin notification email for order #$orderId. PHPMailer Error: " . $mailClient->getMailerInstance()->ErrorInfo);
+    }
 
-if ($deliveryMethod === 'delivery') {
-    $customerMessage .= "We'll deliver to:\n$street\n$city, $state $zip\nDelivery Fee: $" . number_format($actualDeliveryFee, 2) . "\n";
-} else {
-    $customerMessage .= "Pickup Location: Caribbean Smoothie (next to El Yate Bar, Isabel Segunda)\n";
-}
 
-$customerMessage .= "\nPreferred Time: " . ($pickupTime ?: 'N/A') . "\n";
-$customerMessage .= "\nQuestions? Just reply to this email.\n\n";
-$customerMessage .= "- Courtney's Cookies 🍪";
+    // Customer Confirmation Email
+    $customerSubject = "Thanks for your Cookie Order, $fullName! (#$orderId)";
+    
+    $customerMessageHtml = "<h1>Thanks for your Cookie Order, $fullName!</h1>";
+    $customerMessageHtml .= "<p>Hi $fullName,</p>";
+    $customerMessageHtml .= "<p>Thanks for placing your order with Courtney's Cookies! Your order ID is #$orderId.</p>";
+    $customerMessageHtml .= "<p>Here's what we have for you:</p>";
+    $customerMessageHtml .= $orderDetailsHtml; // Re-use the order details HTML
+    $customerMessageHtml .= "<p><strong>Payment Method:</strong> $selectedPaymentMethod</p>";
 
-$customerMailSuccess = mail('quentin.forgues@gmail.com', $customerSubject, $customerMessage, $customerHeaders,  "-fcourtney@ordermycookies.com");
-if (!$customerMailSuccess) {
-    error_log("Failed to send confirmation email to $email");
-}
+    if ($deliveryMethod === 'delivery') {
+        $customerMessageHtml .= "<p><strong>We'll deliver to:</strong><br>$street<br>$city, $state $zip<br>";
+        $customerMessageHtml .= "<strong>Delivery Fee:</strong> $" . number_format($actualDeliveryFee, 2) . "</p>";
+    } else {
+        $customerMessageHtml .= "<p><strong>Pickup Location:</strong> Caribbean Smoothie (next to El Yate Bar, Isabel Segunda)</p>";
+    }
+
+    $customerMessageHtml .= "<p><strong>Preferred Time:</strong> " . ($pickupTime ?: 'N/A') . "</p>";
+    $customerMessageHtml .= "<p>Questions? Just reply to this email.</p>";
+    $customerMessageHtml .= "<p>- Courtney's Cookies 🍪</p>";
+
+    // Plain text version for customer
+    $customerMessagePlainText = "Hi $fullName,\n\n";
+    $customerMessagePlainText .= "Thanks for placing your order with Courtney's Cookies! Your order ID is #$orderId.\n\n";
+    $customerMessagePlainText .= "Here's what we have for you:\n";
+    if ($chocochipQuantity > 0) $customerMessagePlainText .= "• Chocolate Chip: $chocochipQuantity\n";
+    if ($oreomgQuantity > 0) $customerMessagePlainText .= "• Ore-OMG: $oreomgQuantity\n";
+    if ($snickerdoodleQuantity > 0) $customerMessagePlainText .= "• Snickerdoodle: $snickerdoodleQuantity\n";
+    if ($peanutbutterQuantity > 0) $customerMessagePlainText .= "• Peanut Butter: $peanutbutterQuantity\n";
+    if ($maplebaconQuantity > 0) $customerMessagePlainText .= "• Maple Bacon: $maplebaconQuantity\n";
+    $customerMessagePlainText .= "\nTotal: $totalAmount\n";
+    $customerMessagePlainText .= "Payment Method: $selectedPaymentMethod\n\n";
+
+    if ($deliveryMethod === 'delivery') {
+        $customerMessagePlainText .= "We'll deliver to:\n$street\n$city, $state $zip\nDelivery Fee: $" . number_format($actualDeliveryFee, 2) . "\n";
+    } else {
+        $customerMessagePlainText .= "Pickup Location: Caribbean Smoothie (next to El Yate Bar, Isabel Segunda)\n";
+    }
+    $customerMessagePlainText .= "\nPreferred Time: " . ($pickupTime ?: 'N/A') . "\n";
+    $customerMessagePlainText .= "\nQuestions? Just reply to this email.\n\n";
+    $customerMessagePlainText .= "- Courtney's Cookies 🍪";
+
+    // Send to the customer's email address ($email)
+    $customerMailSuccess = $mailClient->sendEmail($email, $fullName, $customerSubject, $customerMessageHtml, $customerMessagePlainText);
+    if (!$customerMailSuccess) {
+        error_log("Failed to send confirmation email to $email for order #$orderId. PHPMailer Error: " . $mailClient->getMailerInstance()->ErrorInfo);
+    }
+
+} // End if ($dbSuccess && $orderId)
+
 // Final JSON Response
 if ($mailSuccess && $customerMailSuccess && $dbSuccess) {
     echo json_encode([
         'success' => true,
-        'message' => 'Order placed successfully!',
+        'message' => 'Order placed successfully! We\'ve sent you a confirmation email.', // Updated success message
         'totalAmount' => $totalAmount,
         'selectedPaymentMethod' => $selectedPaymentMethod,
-        'paymentMessage' => $paymentMessage,
-        'orderId' => $orderId // Optionally return the order ID
+        'paymentMessage' => $paymentMessage, // This seems to be a client-side message, pass it through
+        'orderId' => $orderId
     ]);
 } else {
-    $errorMessage = "Failed to place order. ";
-    if (!$mailSuccess) $errorMessage .= "Email sending failed. ";
-    if (!$dbSuccess) $errorMessage .= "Database saving failed.";
-    echo json_encode(['success' => false, 'message' => $errorMessage]);
+    $errorMessages = [];
+    if (!$dbSuccess) $errorMessages[] = "There was an issue saving your order to our system.";
+    if ($dbSuccess && !$mailSuccess) $errorMessages[] = "Order saved, but failed to send admin notification email.";
+    if ($dbSuccess && !$customerMailSuccess) $errorMessages[] = "Order saved, but failed to send you a confirmation email. Please contact us if you don't receive it shortly.";
+    
+    // If DB failed, that's the primary error.
+    $clientErrorMessage = $dbSuccess ? implode(" ", $errorMessages) : "Failed to place order. Please try again or contact us directly.";
+
+    echo json_encode(['success' => false, 'message' => $clientErrorMessage, 'orderId' => $orderId]);
 }
 ?>
