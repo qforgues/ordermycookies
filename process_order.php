@@ -197,8 +197,14 @@ HTML;
     
     // Send to the customer's email address
     $customerMailSuccess = $mailClient->sendEmail($email, $fullName, $customerSubject, $customerMessageHtml, $customerMessagePlainText);
-    if (!$customerMailSuccess) {
-        error_log("Failed to send confirmation email to $email for order #$orderId. PHPMailer Error: " . $mailClient->getMailerInstance()->ErrorInfo);
+    // Detailed logging if send fails
+    if (! $customerMailSuccess) {
+        $mailer = $mailClient->getMailerInstance();
+        $err = $mailer->ErrorInfo ?: 'Unknown error';
+        error_log("❌ Customer send FAILED at " . date('c') . 
+                  "  | To: {$email}  | ErrorInfo: {$err}");
+    } else {
+        error_log("✅ Customer send succeeded at " . date('c') . "  | To: {$email}");
     }
 }
 
